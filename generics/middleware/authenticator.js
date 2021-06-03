@@ -119,24 +119,24 @@ module.exports = async function (req, res, next) {
 
   var decoded = jwt.decode(token, { complete: true });
   if(decoded === null || decoded.header === undefined){
-    return res.status(HTTP_STATUS_CODE["unauthorized"].status).send(invalidTokenMsg);
+    return res.status(httpStatusCode["unauthorized"].status).send(invalidTokenMsg);
   }
 
   const kid = decoded.header.kid;
   let cert = "";
   let path = keycloakPublicKeyPath + kid;
-
+  
   if (fs.existsSync(path)) {
 
-    // Check if access key file has begin and end block, else append it.
     let accessKeyFile  = await fs.readFileSync(path);
+
     if(accessKeyFile) {
       if(!accessKeyFile.includes(PEM_FILE_BEGIN_STRING)){
-        await fs.writeFileSync(path,PEM_FILE_BEGIN_STRING+"\n"+accessKeyFile.toString()+"\n"+PEM_FILE_END_STRING)
-      }      
+        cert = PEM_FILE_BEGIN_STRING+"\n"+accessKeyFile+"\n"+PEM_FILE_END_STRING;
+      }else {
+        cert = fs.readFileSync(path);
+      }  
     }
-
-    cert = fs.readFileSync(path);
 
     jwt.verify(token, cert, { algorithms: ['sha1', 'RS256', 'HS256'] }, function (err, decode) {
 
