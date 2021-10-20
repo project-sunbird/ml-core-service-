@@ -574,6 +574,8 @@ module.exports = class UsersHelper {
                       "registryDetails.locationId" : stateLocationId
                     };
                 } 
+                console.log(gen.utils.checkValidUUID( stateLocationId ),"checkValidUUID")
+                console.log(filterQuery, "filterQuery")
 
                 const entitiesData = await entitiesHelper.entityDocuments(filterQuery, ["_id"]);
 
@@ -582,7 +584,7 @@ module.exports = class UsersHelper {
                         message: constants.apiResponses.ENTITIES_NOT_EXIST_IN_LOCATION
                     }
                 }
-
+                console.log(entitiesData,"entitiesData")
                 const rolesDocument = await userRolesHelper.roleDocuments({
                     code : role.toUpperCase()
                 },["_id","entityTypes.entityType"]);
@@ -592,7 +594,7 @@ module.exports = class UsersHelper {
                         message: constants.apiResponses.USER_ROLES_NOT_FOUND
                     }
                 }
-
+                console.log(rolesDocument,"rolesDocument")
                 let entityTypes = [];
                 let stateEntityExists = false;
 
