@@ -77,11 +77,17 @@ module.exports = class UsersHelper {
         );
         //program part
         if ( data.programId && data.programId !== "" ) {
+
+          let filterQuery = {
+            _id: data.programId
+          }
+
+          if ( createADuplicateSolution === false ) {
+            filterQuery.createdBy = userId;
+          }
+
           let checkforProgramExist = await programsHelper.programDocuments(
-            {
-              _id: data.programId,
-              createdBy: userId
-            },
+            filterQuery,
             "all",
             ["__v"]
           );
@@ -411,7 +417,7 @@ module.exports = class UsersHelper {
           },
           ["name"]
         );
-
+        
         if (!programData.length > 0) {
           return resolve({
             status: httpStatusCode["bad_request"].status,
@@ -429,39 +435,64 @@ module.exports = class UsersHelper {
             constants.common.DEFAULT_PAGE_NO,
             search
           );
-
+            
         let totalCount = 0;
         let mergedData = [];
+
+        let projectSolutionIdIndexMap = {}
 
         if (
           autoTargetedSolutions.data.data &&
           autoTargetedSolutions.data.data.length > 0
         ) {
-          totalCount = autoTargetedSolutions.data.count;
 
+          // Remove observation solutions which for project tasks.
+          
+          _.remove(autoTargetedSolutions.data.data, function(solution) {
+              return solution.referenceFrom == constants.common.PROJECT && solution.type == constants.common.OBSERVATION;
+            });
+
+          totalCount = autoTargetedSolutions.data.data.length;
           mergedData = autoTargetedSolutions.data.data;
 
-          mergedData = mergedData.map((targetedData) => {
+          mergedData = mergedData.map((targetedData, index) => {
+            if(targetedData.type == constants.common.IMPROVEMENT_PROJECT) {
+              projectSolutionIdIndexMap[targetedData._id.toString()] = index;
+            }
             delete targetedData.programId;
             delete targetedData.programName;
             return targetedData;
           });
+
         }
 
+        // Get projects already started by a user in a given program
         let importedProjects = await improvementProjectService.importedProjects(
           token,
           programId
         );
-
+          
+        // Add projectId to the solution object if the user has already started a project for the improvement project solution.
         if (importedProjects.success) {
+
           if (importedProjects.data && importedProjects.data.length > 0) {
-            totalCount += importedProjects.data.length;
 
             importedProjects.data.forEach((importedProject) => {
-              let data = importedProject.solutionInformation;
-              data['projectTemplateId'] = importedProject.projectTemplateId;
-              data["type"] = constants.common.IMPROVEMENT_PROJECT;
-              mergedData.push(data);
+              
+              
+              if( projectSolutionIdIndexMap[importedProject.solutionInformation._id] !== undefined  ) {
+
+                
+                mergedData[projectSolutionIdIndexMap[importedProject.solutionInformation._id]].projectId = importedProject._id;
+              } else {
+                let data = importedProject.solutionInformation;
+                data['projectTemplateId'] = importedProject.projectTemplateId;
+                data['projectId'] = importedProject._id;
+                data["type"] = constants.common.IMPROVEMENT_PROJECT;
+                mergedData.push(data);
+                totalCount = totalCount + 1;
+              }
+
             });
           }
         }
@@ -746,6 +777,7 @@ module.exports = class UsersHelper {
           success: true,
           data: entities[0]
         });
+        
       } catch (error) {
         return resolve({
           success: false,
@@ -757,6 +789,83 @@ module.exports = class UsersHelper {
       }
     });
   }
+
+  /**
+   * Highest Targeted entity.
+   * @method
+   * @name getHighestTargetedEntity
+   * @param {Object} requestedData - requested data
+   * @returns {Object} - Entity.
+   */
+
+  static getHighestTargetedEntity( roleWiseTargetedEntities ) {
+    return new Promise(async (resolve, reject) => {
+      try {
+
+        let allTargetedEntities = {};
+        let targetedEntity = {};
+
+        for( let pointerToEntities = 0 ; pointerToEntities < roleWiseTargetedEntities.length ; pointerToEntities++ ) {
+          
+          let currentEntity = roleWiseTargetedEntities[pointerToEntities];
+
+          if ( !allTargetedEntities.hasOwnProperty(currentEntity._id) ) {
+            allTargetedEntities[currentEntity._id] = new Array();
+          }
+
+          let otherEntities = roleWiseTargetedEntities.filter((entity) => entity.entityType !== currentEntity.entityType);
+
+          if ( !otherEntities || !otherEntities.length > 0 ) {
+            continue; 
+          }
+
+          let entitiesDocument = await entitiesHelper.entityDocuments({
+              _id: ObjectId(currentEntity._id)
+          }, ["groups"]);
+
+          if ( !entitiesDocument || !entitiesDocument.length > 0 ) {
+            continue;
+          }
+
+          entitiesDocument = entitiesDocument[0];
+          for( let entityCounter = 0 ; entityCounter < otherEntities.length ; entityCounter++ ) {
+
+            let entityDoc = otherEntities[entityCounter];
+          
+            if ( !entitiesDocument.groups || !entitiesDocument.groups.hasOwnProperty(entityDoc.entityType) ) {
+              break;
+            }
+
+            allTargetedEntities[currentEntity._id].push(true);
+            
+            if ( allTargetedEntities[currentEntity._id].length == otherEntities.length ) {
+              targetedEntity = roleWiseTargetedEntities.filter((entity) => entity._id == currentEntity._id);
+              break;
+            }
+          }
+
+        }
+      
+        return resolve({
+          message: constants.apiResponses.SOLUTION_TARGETED_ENTITY,
+          success: true,
+          data: targetedEntity
+        });
+        
+      } catch (error) {
+        return resolve({
+          success: false,
+          status: error.status
+            ? error.status
+            : httpStatusCode['internal_server_error'].status,
+          message: error.message
+        });
+      }
+    });
+  }
+
+
+  
 };
 
 /**

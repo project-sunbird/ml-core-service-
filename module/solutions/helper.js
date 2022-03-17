@@ -172,6 +172,14 @@ module.exports = class SolutionsHelper {
             solutionData.entities = entitiesData;
           }
 
+          if( solutionData.minNoOfSubmissionsRequired && 
+            solutionData.minNoOfSubmissionsRequired > constants.common.DEFAULT_SUBMISSION_REQUIRED 
+          ) {
+            if (!solutionData.allowMultipleAssessemts){
+              solutionData.minNoOfSubmissionsRequired = constants.common.DEFAULT_SUBMISSION_REQUIRED;
+            }
+          }
+
           solutionData.status = constants.common.ACTIVE;
     
           let solutionCreation = 
@@ -428,6 +436,14 @@ module.exports = class SolutionsHelper {
           let updateObject = {
             "$set" : {}
           };
+
+          if( solutionData.minNoOfSubmissionsRequired && 
+            solutionData.minNoOfSubmissionsRequired > constants.common.DEFAULT_SUBMISSION_REQUIRED 
+          ) {
+            if (!solutionData.allowMultipleAssessemts){
+              solutionData.minNoOfSubmissionsRequired = constants.common.DEFAULT_SUBMISSION_REQUIRED;
+            }
+          }
 
           let solutionUpdateData = solutionData;
 
@@ -692,7 +708,8 @@ module.exports = class SolutionsHelper {
               "language",
               "creator",
               "endDate",
-              "link"
+              "link",
+              "referenceFrom"
             ]  
           );
         
@@ -756,7 +773,7 @@ module.exports = class SolutionsHelper {
         });
 
         let filterQuery = {
-          "scope.roles.code" : { $in : [constants.common.ALL_ROLES,data.role] },
+          "scope.roles.code" : { $in : [constants.common.ALL_ROLES,...data.role.split(",")] },
           "scope.entities" : { $in : entityIds },
           "scope.entityType" : { $in : entityTypes },
           "isReusable" : false,
@@ -1299,10 +1316,16 @@ module.exports = class SolutionsHelper {
         let totalCount = 0;
         let mergedData = [];
         let solutionIds = [];
-
+        
         if( assignedSolutions.success && assignedSolutions.data ) {
 
-          totalCount = assignedSolutions.data.count;
+          // Remove observation solutions which for project tasks.
+          
+          _.remove(assignedSolutions.data.data, function(solution) {
+              return solution.referenceFrom == constants.common.PROJECT && solution.type == constants.common.OBSERVATION;
+            });
+
+          totalCount = assignedSolutions.data.data && assignedSolutions.data.data.length > 0 ? assignedSolutions.data.data.length : totalCount;
           mergedData = assignedSolutions.data.data;
 
           if ( mergedData.length > 0 ) {
@@ -1564,18 +1587,22 @@ module.exports = class SolutionsHelper {
    * @name verifyLink
    * @param {String} solutionId - solution Id.
    * @param {String} userId - user Id.
+   * @param {String} userToken - user token.
+   * @param {Boolean} createProject - create project.
    * @param {Object} bodyData - Req Body.
    * @returns {Object} - Details of the solution.
    */
 
-  static verifyLink(link = "", bodyData = {}, userId = "", userToken = "") {
+  static verifyLink(link = "", bodyData = {}, userId = "", userToken = "", createProject = true ) {
     return new Promise(async (resolve, reject) => {
       try {
+        
         let verifySolution = await this.verifySolutionDetails(
           link,
           userId,
           userToken
         );
+
         let checkForTargetedSolution = await this.checkForTargetedSolution(
           link,
           bodyData,
@@ -1583,68 +1610,104 @@ module.exports = class SolutionsHelper {
           userToken
         );
 
-        if (
-          checkForTargetedSolution &&
-          Object.keys(checkForTargetedSolution.result).length > 0
-        ) {
+        if( !checkForTargetedSolution || Object.keys(checkForTargetedSolution.result).length <= 0 ) {
+          return resolve(checkForTargetedSolution);
+        }
 
-          let solutionData = checkForTargetedSolution.result;
-          //non targeted solution
-          if ( !checkForTargetedSolution.result.isATargetedSolution ) {
-            if ( solutionData.type === constants.common.IMPROVEMENT_PROJECT ) {
+        let solutionData = checkForTargetedSolution.result;
 
-              let filterQuery = {
-                createdBy: userId,
-                referenceFrom: constants.common.LINK,
-                link: link,
-              };
+        if( solutionData.type == constants.common.OBSERVATION ) {
+          // Targeted solution
+          if(checkForTargetedSolution.result.isATargetedSolution) {
 
-              let checkForProjectExist =
-                await improvementProjectService.projectDocuments(
-                  userToken,
-                  filterQuery,
-                  ["_id"]
-                );
-              if (
-                checkForProjectExist.success &&
-                checkForProjectExist.data &&
-                checkForProjectExist.data.length > 0 &&
-                checkForProjectExist.data[0]._id != ""
-              ) {
-                checkForTargetedSolution.result['projectId'] =
-                  checkForProjectExist.data[0]._id;
-              }
+            let observationDetailFromLink = await surveyService.getObservationDetail(
+              solutionData.solutionId,
+              userToken
+            );
+
+            checkForTargetedSolution.result["observationId"] = (observationDetailFromLink.result && observationDetailFromLink.result._id != "")
+                ? observationDetailFromLink.result._id
+                : "";
+
+          }
+
+        } else if ( solutionData.type === constants.common.IMPROVEMENT_PROJECT ) {
+          // Targeted solution
+          if( checkForTargetedSolution.result.isATargetedSolution && createProject ) {
+            //targeted user with project creation
+            let projectDetailFromLink = await improvementProjectService.getProjectDetail(
+              solutionData.solutionId,
+              userToken,
+              bodyData
+            );
+
+            if ( !projectDetailFromLink || !projectDetailFromLink.data ) {
+              return resolve(projectDetailFromLink);
             }
 
-          } else {
-            // targeted solution
-            let detailFromLink;
-            if ( solutionData.type == constants.common.IMPROVEMENT_PROJECT ) {
+              checkForTargetedSolution.result['projectId'] = projectDetailFromLink.data._id
+                ? projectDetailFromLink.data._id
+                : "";
 
-              detailFromLink = await improvementProjectService.getProjectDetail(
-                solutionData.solutionId,
-                userToken,
-                bodyData
-              );
+          } else if( checkForTargetedSolution.result.isATargetedSolution && !createProject ) {
+              //targeted user with no project creation 
+              let findQuery = {
+                userId: userId,
+                projectTemplateId : solutionData.projectTemplateId,
+                referenceFrom: {
+                  $ne : constants.common.LINK
+                },
+                isDeleted : false
+              };
 
-              if ( !detailFromLink || !detailFromLink.data ) {
-                return resolve(detailFromLink);
-              }
+              let checkTargetedProjectExist =
+                await improvementProjectService.projectDocuments(
+                  userToken,
+                  findQuery,
+                  ["_id"]
+                );
 
               if (
-                solutionData.type == constants.common.IMPROVEMENT_PROJECT &&
-                detailFromLink.data._id != ""
+                checkTargetedProjectExist.success &&
+                checkTargetedProjectExist.data &&
+                checkTargetedProjectExist.data.length > 0 &&
+                checkTargetedProjectExist.data[0]._id != ""
               ) {
-                checkForTargetedSolution.result['projectId'] = detailFromLink
-                  .data._id
-                  ? detailFromLink.data._id
-                  : "";
+                checkForTargetedSolution.result['projectId'] =
+                  checkTargetedProjectExist.data[0]._id;
               }
-            } 
+
+          } else {
+            //non targeted project exist
+            let checkIfUserProjectExistsQuery = {
+              createdBy: userId,
+              referenceFrom: constants.common.LINK,
+              link: link,
+            };
+
+            let checkForProjectExist =
+              await improvementProjectService.projectDocuments(
+                userToken,
+                checkIfUserProjectExistsQuery,
+                ["_id"]
+              );
+
+            if (
+              checkForProjectExist.success &&
+              checkForProjectExist.data &&
+              checkForProjectExist.data.length > 0 &&
+              checkForProjectExist.data[0]._id != ""
+            ) {
+              checkForTargetedSolution.result['projectId'] =
+                checkForProjectExist.data[0]._id;
+            }
+
           }
+
         }
 
         return resolve(checkForTargetedSolution);
+
       } catch (error) {
         return resolve({
           success: false,
@@ -1773,6 +1836,8 @@ module.exports = class SolutionsHelper {
           "type",
           "_id",
           "programId",
+          "name",
+          "projectTemplateId"
         ]);
 
         let queryData = await this.queryBasedOnRoleAndLocation(bodyData);
@@ -1788,24 +1853,29 @@ module.exports = class SolutionsHelper {
           "link",
           "type",
           "programId",
+          "name",
+          "projectTemplateId"
         ]);
 
         if ( !Array.isArray(solutionData) || solutionData.length < 1 ) {
-
+          
           response.solutionId = solutionDetails[0]._id;
           response.type = solutionDetails[0].type;
+          response.name = solutionDetails[0].name;
           response.programId = solutionDetails[0].programId;
+
           return resolve({
             success: true,
             message:
               constants.apiResponses.SOLUTION_NOT_FOUND_OR_NOT_A_TARGETED,
-            result: response,
+            result: response
           });
         }
 
         response.isATargetedSolution = true;
         Object.assign(response, solutionData[0]);
         response.solutionId = solutionData[0]._id;
+        response.projectTemplateId = solutionDetails[0].projectTemplateId ? solutionDetails[0].projectTemplateId : "";
         delete response._id;
 
         return resolve({
@@ -1896,6 +1966,7 @@ module.exports = class SolutionsHelper {
       }
     });
   }
+
 };
 
  /**
