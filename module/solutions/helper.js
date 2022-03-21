@@ -1626,7 +1626,6 @@ module.exports = class SolutionsHelper {
             checkForTargetedSolution.result["observationId"] = (observationDetailFromLink.result && observationDetailFromLink.result._id != "")
                 ? observationDetailFromLink.result._id
                 : "";
-
           }
 
         } else if ( solutionData.type === constants.common.IMPROVEMENT_PROJECT ) {
@@ -1679,8 +1678,8 @@ module.exports = class SolutionsHelper {
             //non targeted project exist
             let checkIfUserProjectExistsQuery = {
               createdBy: userId,
-              referenceFrom: constants.common.LINK,
               link: link,
+              referenceFrom: constants.common.LINK,
             };
 
             let checkForProjectExist =
@@ -1732,10 +1731,6 @@ module.exports = class SolutionsHelper {
         let response = {
           verified: false,
         };
-
-        if ( link == "" ) {
-          throw new Error(constants.apiResponses.LINK_REQUIRED_CHECK);
-        }
 
         if ( userToken == "" ) {
           throw new Error(constants.apiResponses.REQUIRED_USER_AUTH_TOKEN);
@@ -1796,7 +1791,8 @@ module.exports = class SolutionsHelper {
           message: constants.apiResponses.LINK_VERIFIED,
           result: response,
         });
-      } catch (error) {
+
+       } catch (error) {
         return resolve({
           success: false,
           status: error.status

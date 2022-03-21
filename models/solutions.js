@@ -93,7 +93,10 @@ module.exports = {
       },
       criteriaLevelReport : Boolean,
       license:Object,
-      link: String,
+      link: {
+        type : String,
+        index : true
+      },
       minNoOfSubmissionsRequired: {
         type: Number,
         default: 1
