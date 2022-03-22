@@ -11,7 +11,8 @@ module.exports = {
       code: {
         type: String,
         required: true,
-        index: true
+        index: true,
+        unique: true
       },
       title: {
         type: String,
