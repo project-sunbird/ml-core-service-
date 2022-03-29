@@ -7,6 +7,7 @@
 
 // Dependencies
 const userExtensionHelper = require(ROOT_PATH+"/module/user-extension/helper");
+const applicationEnv = process.env.APPLICATION_ENV;
 
 /**
     * UserExtension
@@ -182,7 +183,7 @@ module.exports = class UserExtension extends Abstract {
       try {
 
         let programs = await userExtensionHelper.programsByPlatformRoles(
-          req.userDetails.userId,
+          (applicationEnv === CONSTANTS.common.LOADTEST_APPLICATION_ENV && req.headers.userid) ? req.headers.userid : req.userDetails.userId,
           req.query.role
         );
         
