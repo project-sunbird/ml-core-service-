@@ -183,7 +183,7 @@ module.exports = class UserExtension extends Abstract {
       try {
 
         let programs = await userExtensionHelper.programsByPlatformRoles(
-          (applicationEnv === CONSTANTS.common.LOADTEST_APPLICATION_ENV && req.headers.userid) ? req.headers.userid : req.userDetails.userId,
+          (applicationEnv === constants.common.LOADTEST_APPLICATION_ENV && req.headers.userid) ? req.headers.userid : req.userDetails.userId,
           req.query.role
         );
         
