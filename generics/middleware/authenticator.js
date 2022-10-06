@@ -9,6 +9,7 @@
 const keycloakPublicKeyPath = process.env.KEYCLOAK_PUBLIC_KEY_PATH + "/";
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
+const applicationEnv = process.env.APPLICATION_ENV;
 const PEM_FILE_BEGIN_STRING = "-----BEGIN PUBLIC KEY-----";
 const PEM_FILE_END_STRING = "-----END PUBLIC KEY-----";
 
@@ -159,8 +160,8 @@ module.exports = async function (req, res, next) {
 
         req.userDetails = {
           userToken : token,
-          id : decode.sub.split(":").pop(),
-          userId : decode.sub.split(":").pop(),
+          id : (applicationEnv === constants.common.LOADTEST_APPLICATION_ENV && req.headers["userid"]) ? req.headers["userid"] : decode.sub.split(":").pop(),
+          userId : (applicationEnv === constants.common.LOADTEST_APPLICATION_ENV && req.headers["userid"]) ? req.headers["userid"] : decode.sub.split(":").pop(),
           userName : decode.preferred_username,
           email : decode.email,
           firstName : decode.name
