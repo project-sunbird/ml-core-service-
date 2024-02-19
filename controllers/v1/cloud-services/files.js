@@ -8,7 +8,9 @@
 
 // dependencies
 let filesHelpers = require(ROOT_PATH+"/module/cloud-services/files/helper");
-
+const path = require("path");
+const fs = require("fs");
+const moment = require("moment-timezone");
 /**
     * Files service.
     * @class
@@ -89,37 +91,30 @@ module.exports = class Files {
       * @returns {JSON} Response with status and message.
     */
 
-   async preSignedUrls(req) {
-    return new Promise(async (resolve, reject) => {
-
-        try {
-
-            let signedUrl =
-            await filesHelpers.preSignedUrls(
-                 req.body.request,
-                 req.body.ref,
-                 req.userDetails ? req.userDetails.userId : ""
+    async preSignedUrls(req) {
+        return new Promise(async (resolve, reject) => {
+          try {
+            let signedUrl = await filesHelpers.preSignedUrls(
+              req.body.request,
+              req.body.ref,
+              req.userDetails ? req.userDetails.userId : "",
+              req.query.serviceUpload == "true"? true : false
             );
-
             signedUrl["result"] = signedUrl["data"];
             return resolve(signedUrl);
-
-        } catch (error) {
-            
+          } catch (error) {
             return reject({
-                status:
-                    error.status ||
-                    httpStatusCode["internal_server_error"].status,
-
-                message:
-                    error.message
-                    || httpStatusCode["internal_server_error"].message,
-
-                errorObject: error
-            })
-        }
-    })
-   }
+              status:
+                error.status || httpStatusCode["internal_server_error"].status,
+    
+              message:
+                error.message || httpStatusCode["internal_server_error"].message,
+    
+              errorObject: error,
+            });
+          }
+        });
+    }
 
       /**
      * @api {post} /kendra/api/v1/cloud-services/files/getDownloadableUrl  
@@ -184,5 +179,75 @@ module.exports = class Files {
 
     }
     
+    /**
+      * upload the file to the cloud .
+      * @method
+      * @name upload
+      * @param  {Request}  req  request body.
+      * @returns {JSON} Response with status .
+      * @apiParamExample {json} Response:
+     * {
+        "status": 200
+       }
+     */
+
+  async upload(req) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        let currentMoment = moment(new Date());
+        let formattedDate = currentMoment.format("DD-MM-YYYY");
+        if (!fs.existsSync(`${ROOT_PATH}/public/assets/${formattedDate}`)) {
+          fs.mkdirSync(`${ROOT_PATH}/public/assets/${formattedDate}`);
+        }
+        let filename = path.basename(req.query.file);
+        let localFilePath = `${ROOT_PATH}/public/assets/${formattedDate}/${filename}`;
+        let uploadStatus
+        // Use the Promise version of fs.writeFile
+        
+        if (req.headers["content-type"] === "application/octet-stream") {
+          const binaryData = Buffer.from(req.body);
+          await fs.promises.writeFile(localFilePath, binaryData);
+          uploadStatus = await filesHelpers.upload(localFilePath, req.query.file);
+
+          if(uploadStatus.status == 200){
+            return resolve({
+              status: httpStatusCode["ok"].status,
+            });
+          }
+        } else {
+          const fileKey = Object.keys(req.files)[0];
+          if (filename === req.files[fileKey].name) {
+            await fs.promises.writeFile(localFilePath, req.files[fileKey].data);
+            uploadStatus = await filesHelpers.upload(
+              localFilePath,
+              req.query.file
+            );
+            if(uploadStatus.status == 200){
+              return resolve({
+                status: httpStatusCode["ok"].status,
+              });
+            }
+            
+          } else {
+            return reject({
+              status: httpStatusCode["internal_server_error"].status,
+
+              message: constants.apiResponses.FAILED_TO_VALIDATE_FILE,
+            });
+          }
+        }
+      } catch (error) {
+        return reject({
+          status:
+            error.status || httpStatusCode["internal_server_error"].status,
+
+          message:
+            error.message || httpStatusCode["internal_server_error"].message,
+
+          errorObject: error,
+        });
+      }
+    });
+  }
 };
 

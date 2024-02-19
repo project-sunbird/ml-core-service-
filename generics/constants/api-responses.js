@@ -204,4 +204,5 @@ module.exports = {
   "FAILED_TO_CREATE_DOWNLOADABLEURL" : "Failed to generate downloadableUrl",
   "KEYS_INDEXED_SUCCESSFULLY": 'Keys indexed successfully',
   "KEYS_ALREADY_INDEXED": 'Keys already indexed',
+  "FAILED_TO_VALIDATE_FILE": "Could not validate fileName",
 };
