@@ -38,7 +38,7 @@ var expressValidator = require('express-validator');
 //To enable cors
 app.use(cors());
 app.use(expressValidator())
-
+app.use(bodyParser.raw({ type: 'application/octet-stream' }));
 app.use(fileUpload());
 app.use(bodyParser.json({ limit: '50MB' }));
 app.use(bodyParser.urlencoded({ limit: '50MB', extended: false }));
