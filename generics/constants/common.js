@@ -83,5 +83,6 @@ module.exports = {
   SIGNEDURL: "signedUrl",
   WRITE: "write",
   READ: "read",
-  OFF: "OFF"
+  OFF: "OFF",
+  UPLOAD_FILE:"api/cloud-services/mlcore/v1/files/upload"
 };

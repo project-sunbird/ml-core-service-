@@ -115,52 +115,71 @@ module.exports = class FilesHelper {
    * @returns {Array}                                   - consists of all signed urls files.
    */
 
-  static preSignedUrls(fileNames, bucket, storageName = '',folderPath, expireIn = '', permission = '', addDruidFileUrlForIngestion = false) {
+  static preSignedUrls(
+    fileNames,
+    bucket,
+    storageName = "",
+    folderPath,
+    expireIn = "",
+    permission = "",
+    addDruidFileUrlForIngestion = false,
+    serviceUpload = false
+  ) {
     return new Promise(async (resolve, reject) => {
       try {
         let actionPermission = constants.common.WRITE_PERMISSION;
         if (!Array.isArray(fileNames) || fileNames.length < 1) {
-          throw new Error('File names not given.')
+          throw new Error("File names not given.");
         }
         let noOfMinutes = constants.common.NO_OF_MINUTES;
         let linkExpireTime = constants.common.NO_OF_EXPIRY_TIME * noOfMinutes;
         // Override cloud storage provider name if provided explicitly.
-        if (storageName !== '') {
+        if (storageName !== "") {
           cloudStorage = storageName;
         }
 
         // Override actionPermission if provided explicitly.
-        if (permission !== '') {
+        if (permission !== "") {
           actionPermission = permission;
-        }        
+        }
         // Override linkExpireTime if provided explicitly.
-        if (expireIn !== '') {
+        if (expireIn !== "") {
           linkExpireTime = expireIn;
         }
 
         // Create an array of promises for signed URLs
         // {sample response} : https://sunbirdstagingpublic.blob.core.windows.net/samiksha/reports/sample.pdf?sv=2020-10-02&st=2023-08-03T07%3A53%3A53Z&se=2023-08-03T08%3A53%3A53Z&sr=b&sp=w&sig=eZOHrBBH%2F55E93Sxq%2BHSrniCEmKrKc7LYnfNwz6BvWE%3D
         const signedUrlsPromises = fileNames.map(async (fileName) => {
-          let file = folderPath && folderPath !== '' ? folderPath + fileName : fileName;
-          
-          let signedUrlResponse = await cloudClient.getSignedUrl(
-              bucket,             // bucket name
-              file,               // file path
-              linkExpireTime,     // expire
-              actionPermission    // read/write
-          );
-
-          let response = {
+          let file =
+            folderPath && folderPath !== "" ? folderPath + fileName : fileName;
+            let response = {
               file: file,
-              url: signedUrlResponse,
               payload: { sourcePath: file },
-              cloudStorage: cloudStorage.toUpperCase()
-          };
-          if ( addDruidFileUrlForIngestion ) {
+              cloudStorage: cloudStorage.toUpperCase(),
+            };
+            
+            response.downloadableUrl = await cloudClient.getDownloadableUrl(
+              bucket,
+              file,
+              linkExpireTime // Link ExpireIn
+            );
+          if (!serviceUpload) {
+            response.url = await cloudClient.getSignedUrl(
+              bucket, // bucket name
+              file, // file path
+              linkExpireTime, // expire
+              actionPermission // read/write
+            );
+          } else {
+            response.url = `${process.env.PUBLIC_BASE_URL}/${constants.common.UPLOAD_FILE}?file=${file}`;
+          }
+
+          
+          if (addDruidFileUrlForIngestion) {
             // {sample response} : { type: 's3', uris: [ 's3://dev-mentoring/reports/cspSample.pdf' ] }
             let druidIngestionConfig = await cloudClient.getFileUrlForIngestion(
-              bucket,             // bucket name
-              file                // file path
+              bucket, // bucket name
+              file // file path
             );
             response.inputSource = druidIngestionConfig;
           }
@@ -172,20 +191,52 @@ module.exports = class FilesHelper {
 
         // Return success response with the signed URLs
         return resolve({
-            success: true,
-            message: constants.apiResponses.URL_GENERATED,
-            result: signedUrls
+          success: true,
+          message: constants.apiResponses.URL_GENERATED,
+          result: signedUrls,
         });
-        
       } catch (error) {
         return reject({
           success: false,
           message: constants.apiResponses.FAILED_PRE_SIGNED_URL,
-          error: error
-        })
+          error: error,
+        });
       }
-    })
+    });
   }
+
+  /**
+   * Upload and get Download Url for a file.
+   * @method
+   * @name upload
+   * @param {String} folderPath                         -folderPath where file will be stored
+   * @param {String} bucket                             - name of the bucket
+   * @param {Buffer} data                                - Binary Value of file to upload.
+   * @returns {JSON}                                    - Path and download Url for the file
+   */
+  static upload(folderPath, bucket, data) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        await cloudClient.upload(
+          bucket, // bucket name
+          folderPath, // file path
+          data //file content
+        );
+
+        // Return success response with the upload path and download URLs
+        return resolve({
+          success: true,
+        });
+      } catch (error) {
+        return reject({
+          success: false,
+          message: constants.apiResponses.FAILED_TO_UPLOAD,
+          error: error,
+        });
+      }
+    });
+  }
+
   /**
    * Unzip file
    * @method
