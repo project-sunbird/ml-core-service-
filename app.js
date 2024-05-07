@@ -20,8 +20,10 @@ require("./config/cloud-service");
 
 let environmentData = require("./envVariables")();
 
-if(!environmentData.success) {
-  console.log("Server could not start . Not all environment variable is provided");
+if (!environmentData.success) {
+  console.log(
+    "Server could not start . Not all environment variable is provided"
+  );
   process.exit();
 }
 
@@ -33,20 +35,19 @@ const bodyParser = require("body-parser");
 const cors = require("cors");
 var fs = require("fs");
 var path = require("path");
-var expressValidator = require('express-validator');
+var expressValidator = require("express-validator");
 
 //To enable cors
 app.use(cors());
-app.use(expressValidator())
-app.use(bodyParser.raw({ type: 'application/octet-stream' }));
+app.use(expressValidator());
+app.use(bodyParser.raw({ type: "application/octet-stream" }));
 app.use(fileUpload());
-app.use(bodyParser.json({ limit: '50MB' }));
-app.use(bodyParser.urlencoded({ limit: '50MB', extended: false }));
+app.use(bodyParser.json({ limit: "50MB" }));
+app.use(bodyParser.urlencoded({ limit: "50MB", extended: false }));
 app.use(express.static("public"));
 
-
 app.all("*", (req, res, next) => {
-  console.log({"Debugging ML Core Service": true});
+  console.log({ "Debugging ML Core Service": true });
   console.log("<------------Request log starts here------------------>");
   console.log("Request URL: ", req.url);
   console.log("Request Headers: ", JSON.stringify(req.headers));
@@ -60,9 +61,23 @@ app.all("*", (req, res, next) => {
 router(app);
 
 //listen to given port
-app.listen(process.env.APPLICATION_PORT, () => {
-  console.log("Environment: " + process.env.APPLICATION_ENV);
-  console.log("Application is running on the port:" + process.env.APPLICATION_PORT);
-});
-
-module.exports = app;
+if (process.env.APPLICATION_ENV == "BM") {
+  const server = app.listen(process.env.APPLICATION_PORT, () => {
+    console.log("Environment: " + process.env.APPLICATION_ENV);
+    console.log(
+      "Application is running on the port running in BM " +
+        process.env.APPLICATION_PORT
+    );
+  });
+  server.keepAliveTimeout = 60000 * 120;
+  return server;
+} else {
+  //listen to given port
+  const server = app.listen(process.env.APPLICATION_PORT, () => {
+    console.log("Environment: " + process.env.APPLICATION_ENV);
+    console.log(
+      "Application is running on the port: " + process.env.APPLICATION_PORT
+    );
+  });
+  return server;
+}
