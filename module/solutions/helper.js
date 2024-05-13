@@ -15,7 +15,7 @@ const userService = require(ROOT_PATH + "/generics/services/users");
 const programUsersHelper = require(MODULES_BASE_PATH + "/programUsers/helper");
 const timeZoneDifference =
   process.env.TIMEZONE_DIFFRENECE_BETWEEN_LOCAL_TIME_AND_UTC;
-const validateEntity = process.env.VALIDATE_ENTITIES
+const validateEntity = process.env.VALIDATE_ENTITIES;
 
 /**
  * SolutionsHelper
@@ -66,33 +66,32 @@ module.exports = class SolutionsHelper {
     });
   }
 
-   /**
-     * Update solution users
-     * @method
-     * @name updateMany
-     * @param {Object} query 
-     * @param {Object} update 
-     * @param {Object} options 
-     * @returns {JSON} - update solutions.
-    */
+  /**
+   * update the solution document.
+   * @method
+   * @name updateMany
+   * @param {Object} query
+   * @param {Object} update
+   * @param {Object} options
+   * @returns {JSON} - update solutions.
+   */
 
-   static updateMany(query, update, options = {}) {
+  static updateMany(query, update, options = {}) {
     return new Promise(async (resolve, reject) => {
-        try {
-        
-            let updatedSolutionCount = await database.models.solutions.updateMany(
-                query, 
-                update,
-                options
-            );
-            if( updatedSolutionCount) {
-                return resolve(updatedSolutionCount);
-            }
-        } catch (error) {
-            return reject(error);
+      try {
+        let updatedSolutions = await database.models.solutions.updateMany(
+          query,
+          update,
+          options
+        );
+        if (updatedSolutions) {
+          return resolve(updatedSolutions);
         }
-    })
-}
+      } catch (error) {
+        return reject(error);
+      }
+    });
+  }
 
   /**
    * Create solution.
@@ -132,7 +131,7 @@ module.exports = class SolutionsHelper {
           ["name", "description", "scope", "endDate", "startDate"]
         );
 
-        if (!programData.length > 0) {
+        if (!(programData.length > 0)) {
           throw {
             message: constants.apiResponses.PROGRAM_NOT_FOUND,
           };
@@ -184,7 +183,7 @@ module.exports = class SolutionsHelper {
             }
           }
 
-          if (!entityIds.length > 0) {
+          if (!(entityIds.length > 0)) {
             throw {
               message: constants.apiResponses.ENTITIES_NOT_FOUND,
             };
@@ -287,7 +286,7 @@ module.exports = class SolutionsHelper {
           ["_id", "scope"]
         );
 
-        if (!programData.length > 0) {
+        if (!(programData.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.PROGRAM_NOT_FOUND,
@@ -298,7 +297,7 @@ module.exports = class SolutionsHelper {
           "_id",
         ]);
 
-        if (!solutionData.length > 0) {
+        if (!(solutionData.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.SOLUTION_NOT_FOUND,
@@ -308,7 +307,7 @@ module.exports = class SolutionsHelper {
           let currentSolutionScope = JSON.parse(
             JSON.stringify(programData[0].scope)
           );
-          if(validateEntity !== constants.common.OFF) {
+          if (validateEntity !== constants.common.OFF) {
             if (Object.keys(scopeData).length > 0) {
               if (scopeData.entityType) {
                 let bodyData = { type: scopeData.entityType };
@@ -355,7 +354,7 @@ module.exports = class SolutionsHelper {
                   }
                 }
 
-                if (!entityIds.length > 0) {
+                if (!(entityIds.length > 0)) {
                   return resolve({
                     status: httpStatusCode.bad_request.status,
                     message: constants.apiResponses.ENTITIES_NOT_FOUND,
@@ -374,7 +373,7 @@ module.exports = class SolutionsHelper {
                 entitiesData = entityIds;
                 // }
 
-                if (!entitiesData.length > 0) {
+                if (!(entitiesData.length > 0)) {
                   return resolve({
                     status: httpStatusCode.bad_request.status,
                     message: constants.apiResponses.SCOPE_ENTITY_INVALID,
@@ -384,7 +383,6 @@ module.exports = class SolutionsHelper {
                 currentSolutionScope.entities = entitiesData;
               }
             }
-          
 
             if (scopeData.roles) {
               if (
@@ -398,7 +396,7 @@ module.exports = class SolutionsHelper {
                   ["_id", "code"]
                 );
 
-                if (!userRoles.length > 0) {
+                if (!(userRoles.length > 0)) {
                   return resolve({
                     status: httpStatusCode.bad_request.status,
                     message: constants.apiResponses.INVALID_ROLE_CODE,
@@ -416,11 +414,9 @@ module.exports = class SolutionsHelper {
                 }
               }
             }
-          }else{
+          } else {
             currentSolutionScope = scopeData;
           }
-            
-          
 
           let updateSolution = await database.models.solutions
             .findOneAndUpdate(
@@ -445,7 +441,7 @@ module.exports = class SolutionsHelper {
           message: constants.apiResponses.SOLUTION_UPDATED,
         });
       } catch (error) {
-      return resolve({
+        return resolve({
           success: false,
         });
       }
@@ -473,7 +469,7 @@ module.exports = class SolutionsHelper {
           "programId",
         ]);
 
-        if (!solutionDocument.length > 0) {
+        if (!(solutionDocument.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.SOLUTION_NOT_FOUND,
@@ -492,7 +488,7 @@ module.exports = class SolutionsHelper {
             ["_id", "endDate", "startDate"]
           );
 
-          if (!programData.length > 0) {
+          if (!(programData.length > 0)) {
             throw {
               message: constants.apiResponses.PROGRAM_NOT_FOUND,
             };
@@ -661,7 +657,11 @@ module.exports = class SolutionsHelper {
 
         if (projection) {
           projection.forEach((projectedData) => {
-            projection1[projectedData] = 1;
+            if (projectedData ===  constants.common.OBEJECT_TYPE) {
+              projection1[projectedData] = constants.common.SOULTION.toLowerCase();
+            } else {
+              projection1[projectedData] = 1;
+            }
           });
         } else {
           projection1 = {
@@ -676,10 +676,14 @@ module.exports = class SolutionsHelper {
 
         facetQuery["$facet"]["totalCount"] = [{ $count: "count" }];
 
-        facetQuery["$facet"]["data"] = [
-          { $skip: pageSize * (pageNo - 1) },
-          { $limit: pageSize },
-        ];
+        if (pageSize === "" && pageNo === "") {
+          facetQuery["$facet"]["data"] = [{ $skip: 0 }];
+        } else {
+          facetQuery["$facet"]["data"] = [
+            { $skip: pageSize * (pageNo - 1) },
+            { $limit: pageSize },
+          ];
+        }
 
         let projection2 = {};
 
@@ -689,7 +693,6 @@ module.exports = class SolutionsHelper {
             $arrayElemAt: ["$totalCount.count", 0],
           },
         };
-
         let solutionDocuments = await database.models.solutions.aggregate([
           { $match: matchQuery },
           {
@@ -699,7 +702,6 @@ module.exports = class SolutionsHelper {
           facetQuery,
           projection2,
         ]);
-
         return resolve({
           success: true,
           message: constants.apiResponses.SOLUTIONS_LIST,
@@ -860,31 +862,32 @@ module.exports = class SolutionsHelper {
         let filterQuery = {
           isReusable: false,
           isDeleted: false,
-        }
-
-        if(validateEntity !== constants.common.OFF){
+        };
+        if (validateEntity !== constants.common.OFF) {
           Object.keys(_.omit(data, ["filter", "role"])).forEach(
             (requestedDataKey) => {
               registryIds.push(data[requestedDataKey]);
               entityTypes.push(requestedDataKey);
             }
           );
-          if (!registryIds.length > 0) {
+          if (!(registryIds.length > 0)) {
             throw {
               message: constants.apiResponses.NO_LOCATION_ID_FOUND_IN_DATA,
             };
           }
 
           filterQuery["scope.roles.code"] = {
-              $in: [constants.common.ALL_ROLES, ...data.role.split(",")],
-            }
-          filterQuery["scope.entities"]= { $in: registryIds }
-          filterQuery["scope.entityType"]= { $in: entityTypes }
-        }else{
-          let userRoleInfo = _.omit(data, ['filter'])
+            $in: [constants.common.ALL_ROLES, ...data.role.split(",")],
+          };
+          filterQuery["scope.entities"] = { $in: registryIds };
+          filterQuery["scope.entityType"] = { $in: entityTypes };
+        } else {
+          let userRoleInfo = _.omit(data, ["filter"]);
           let userRoleKeys = Object.keys(userRoleInfo);
-          userRoleKeys.forEach(entities => {
-            filterQuery["scope."+entities] = {$in:userRoleInfo[entities].split(",")}
+          userRoleKeys.forEach((entities) => {
+            filterQuery["scope." + entities] = {
+              $in: userRoleInfo[entities].split(","),
+            };
           });
         }
 
@@ -949,7 +952,6 @@ module.exports = class SolutionsHelper {
     return new Promise(async (resolve, reject) => {
       try {
         let queryData = await this.queryBasedOnRoleAndLocation(bodyData, type);
-
         if (!queryData.success) {
           return resolve(queryData);
         }
@@ -976,8 +978,7 @@ module.exports = class SolutionsHelper {
             "endDate",
           ]
         );
-
-        if (!targetedSolutionDetails.length > 0) {
+        if (!(targetedSolutionDetails.length > 0)) {
           throw {
             status: httpStatusCode["bad_request"].status,
             message: constants.apiResponses.SOLUTION_NOT_FOUND,
@@ -1022,7 +1023,7 @@ module.exports = class SolutionsHelper {
           ["_id"]
         );
 
-        if (!solutionData.length > 0) {
+        if (!(solutionData.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.SOLUTION_NOT_FOUND,
@@ -1039,7 +1040,7 @@ module.exports = class SolutionsHelper {
             ["_id", "code"]
           );
 
-          if (!userRoles.length > 0) {
+          if (!(userRoles.length > 0)) {
             return resolve({
               status: httpStatusCode.bad_request.status,
               message: constants.apiResponses.INVALID_ROLE_CODE,
@@ -1123,7 +1124,7 @@ module.exports = class SolutionsHelper {
           ["_id", "programId", "scope.entityType"]
         );
 
-        if (!solutionData.length > 0) {
+        if (!(solutionData.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.SOLUTION_NOT_FOUND,
@@ -1136,7 +1137,7 @@ module.exports = class SolutionsHelper {
           ["scope.entities", "scope.entityType"]
         );
 
-        if (!programData.length > 0) {
+        if (!(programData.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.PROGRAM_NOT_FOUND,
@@ -1154,7 +1155,7 @@ module.exports = class SolutionsHelper {
             matchData
           );
 
-          if (!childEntities.length > 0) {
+          if (!(childEntities.length > 0)) {
             throw {
               message: constants.apiResponses.ENTITY_NOT_EXISTS_IN_PARENT,
             };
@@ -1162,7 +1163,7 @@ module.exports = class SolutionsHelper {
           checkEntityInParent = entities.filter((element) =>
             childEntities.includes(element)
           );
-          if (!checkEntityInParent.length > 0) {
+          if (!(checkEntityInParent.length > 0)) {
             throw {
               message: constants.apiResponses.ENTITY_NOT_EXISTS_IN_PARENT,
             };
@@ -1199,7 +1200,7 @@ module.exports = class SolutionsHelper {
           }
         }
 
-        if (!entityIds.length > 0) {
+        if (!(entityIds.length > 0)) {
           throw {
             message: constants.apiResponses.ENTITIES_NOT_FOUND,
           };
@@ -1261,7 +1262,7 @@ module.exports = class SolutionsHelper {
           ["_id"]
         );
 
-        if (!solutionData.length > 0) {
+        if (!(solutionData.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.SOLUTION_NOT_FOUND,
@@ -1275,7 +1276,7 @@ module.exports = class SolutionsHelper {
           ["_id", "code"]
         );
 
-        if (!userRoles.length > 0) {
+        if (!(userRoles.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.INVALID_ROLE_CODE,
@@ -1338,7 +1339,7 @@ module.exports = class SolutionsHelper {
           ["_id", "scope.entities"]
         );
 
-        if (!solutionData.length > 0) {
+        if (!(solutionData.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.SOLUTION_NOT_FOUND,
@@ -1346,7 +1347,7 @@ module.exports = class SolutionsHelper {
         }
         let entitiesData = [];
         entitiesData = solutionData[0].scope.entities;
-        if (!entitiesData.length > 0) {
+        if (!(entitiesData.length > 0)) {
           throw {
             message: constants.apiResponses.ENTITIES_NOT_FOUND,
           };
@@ -1402,7 +1403,7 @@ module.exports = class SolutionsHelper {
           isDeleted: false,
         });
 
-        if (!solutionData.length > 0) {
+        if (!(solutionData.length > 0)) {
           return resolve({
             status: httpStatusCode.bad_request.status,
             message: constants.apiResponses.SOLUTION_NOT_FOUND,
@@ -2000,7 +2001,7 @@ module.exports = class SolutionsHelper {
           ["_id", "programId", "programName"]
         );
 
-        if (!privateSolutionDetails.length > 0) {
+        if (!(privateSolutionDetails.length > 0)) {
           // Data for program and solution creation
           let programAndSolutionData = {
             type: constants.common.IMPROVEMENT_PROJECT,
@@ -2446,7 +2447,7 @@ module.exports = class SolutionsHelper {
             ["__v"]
           );
 
-          if (!checkforProgramExist.length > 0) {
+          if (!(checkforProgramExist.length > 0)) {
             return resolve({
               status: httpStatusCode["bad_request"].status,
               message: constants.apiResponses.PROGRAM_NOT_FOUND,
@@ -2561,7 +2562,7 @@ module.exports = class SolutionsHelper {
             };
             let entityDetails = await userService.locationSearch(filterData);
             let entityDocuments = entityDetails.data;
-            if (!entityDetails.success || !entityDocuments.length > 0) {
+            if (!entityDetails.success || !(entityDocuments.length > 0)) {
               return resolve({
                 status: httpStatusCode["bad_request"].status,
                 message: constants.apiResponses.ENTITY_NOT_FOUND,
@@ -2600,7 +2601,7 @@ module.exports = class SolutionsHelper {
             ]
           );
 
-          if (!solutionData.length > 0) {
+          if (!(solutionData.length > 0)) {
             return resolve({
               status: httpStatusCode["bad_request"].status,
               message: constants.apiResponses.SOLUTION_NOT_FOUND,
