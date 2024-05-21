@@ -15,7 +15,7 @@ const userService = require(ROOT_PATH + "/generics/services/users");
 const programUsersHelper = require(MODULES_BASE_PATH + "/programUsers/helper");
 const timeZoneDifference =
   process.env.TIMEZONE_DIFFRENECE_BETWEEN_LOCAL_TIME_AND_UTC;
-const validateEntity = process.env.VALIDATE_ENTITIES
+const validateEntity = process.env.VALIDATE_ENTITIES;
 
 /**
  * SolutionsHelper
@@ -66,33 +66,32 @@ module.exports = class SolutionsHelper {
     });
   }
 
-   /**
-     * Update solution users
-     * @method
-     * @name updateMany
-     * @param {Object} query 
-     * @param {Object} update 
-     * @param {Object} options 
-     * @returns {JSON} - update solutions.
-    */
+  /**
+   * Update solution users
+   * @method
+   * @name updateMany
+   * @param {Object} query
+   * @param {Object} update
+   * @param {Object} options
+   * @returns {JSON} - update solutions.
+   */
 
-   static updateMany(query, update, options = {}) {
+  static updateMany(query, update, options = {}) {
     return new Promise(async (resolve, reject) => {
-        try {
-        
-            let updatedSolutionCount = await database.models.solutions.updateMany(
-                query, 
-                update,
-                options
-            );
-            if( updatedSolutionCount) {
-                return resolve(updatedSolutionCount);
-            }
-        } catch (error) {
-            return reject(error);
+      try {
+        let updatedSolutionCount = await database.models.solutions.updateMany(
+          query,
+          update,
+          options
+        );
+        if (updatedSolutionCount) {
+          return resolve(updatedSolutionCount);
         }
-    })
-}
+      } catch (error) {
+        return reject(error);
+      }
+    });
+  }
 
   /**
    * Create solution.
@@ -308,7 +307,7 @@ module.exports = class SolutionsHelper {
           let currentSolutionScope = JSON.parse(
             JSON.stringify(programData[0].scope)
           );
-          if(validateEntity !== constants.common.OFF) {
+          if (validateEntity !== constants.common.OFF) {
             if (Object.keys(scopeData).length > 0) {
               if (scopeData.entityType) {
                 let bodyData = { type: scopeData.entityType };
@@ -384,7 +383,6 @@ module.exports = class SolutionsHelper {
                 currentSolutionScope.entities = entitiesData;
               }
             }
-          
 
             if (scopeData.roles) {
               if (
@@ -416,11 +414,9 @@ module.exports = class SolutionsHelper {
                 }
               }
             }
-          }else{
+          } else {
             currentSolutionScope = scopeData;
           }
-            
-          
 
           let updateSolution = await database.models.solutions
             .findOneAndUpdate(
@@ -445,7 +441,7 @@ module.exports = class SolutionsHelper {
           message: constants.apiResponses.SOLUTION_UPDATED,
         });
       } catch (error) {
-      return resolve({
+        return resolve({
           success: false,
         });
       }
@@ -860,9 +856,9 @@ module.exports = class SolutionsHelper {
         let filterQuery = {
           isReusable: false,
           isDeleted: false,
-        }
+        };
 
-        if(validateEntity !== constants.common.OFF){
+        if (validateEntity !== constants.common.OFF) {
           Object.keys(_.omit(data, ["filter", "role"])).forEach(
             (requestedDataKey) => {
               registryIds.push(data[requestedDataKey]);
@@ -876,15 +872,17 @@ module.exports = class SolutionsHelper {
           }
 
           filterQuery["scope.roles.code"] = {
-              $in: [constants.common.ALL_ROLES, ...data.role.split(",")],
-            }
-          filterQuery["scope.entities"]= { $in: registryIds }
-          filterQuery["scope.entityType"]= { $in: entityTypes }
-        }else{
-          let userRoleInfo = _.omit(data, ['filter'])
+            $in: [constants.common.ALL_ROLES, ...data.role.split(",")],
+          };
+          filterQuery["scope.entities"] = { $in: registryIds };
+          filterQuery["scope.entityType"] = { $in: entityTypes };
+        } else {
+          let userRoleInfo = _.omit(data, ["filter"]);
           let userRoleKeys = Object.keys(userRoleInfo);
-          userRoleKeys.forEach(entities => {
-            filterQuery["scope."+entities] = {$in:userRoleInfo[entities].split(",")}
+          userRoleKeys.forEach((entities) => {
+            filterQuery["scope." + entities] = {
+              $in: userRoleInfo[entities].split(","),
+            };
           });
         }
 
@@ -1540,13 +1538,23 @@ module.exports = class SolutionsHelper {
         }
 
         if (getTargetedSolution) {
+          // commented out because it was having issue in listing of solutions
+          // targetedSolutions = await this.forUserRoleAndLocation(
+          //   requestedData,
+          //   solutionType,
+          //   "",
+          //   "",
+          //   constants.common.DEFAULT_PAGE_SIZE,
+          //   constants.common.DEFAULT_PAGE_NO,
+          //   search
+          // );
           targetedSolutions = await this.forUserRoleAndLocation(
             requestedData,
             solutionType,
             "",
             "",
-            constants.common.DEFAULT_PAGE_SIZE,
-            constants.common.DEFAULT_PAGE_NO,
+            "", // not passing page size
+            "", // not passing page no
             search
           );
         }
