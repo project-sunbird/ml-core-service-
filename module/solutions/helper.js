@@ -672,10 +672,14 @@ module.exports = class SolutionsHelper {
 
         facetQuery["$facet"]["totalCount"] = [{ $count: "count" }];
 
-        facetQuery["$facet"]["data"] = [
-          { $skip: pageSize * (pageNo - 1) },
-          { $limit: pageSize },
-        ];
+        if (pageSize === "" && pageNo === "") {
+          facetQuery["$facet"]["data"] = [{ $skip: 0 }];
+        } else {
+          facetQuery["$facet"]["data"] = [
+            { $skip: pageSize * (pageNo - 1) },
+            { $limit: pageSize },
+          ];
+        }
 
         let projection2 = {};
 
