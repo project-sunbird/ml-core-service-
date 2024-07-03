@@ -60,21 +60,13 @@ module.exports = class FilesHelper {
               responseObj.filePath = element;
               // Get the downloadable URL from the cloud client SDK.
               // {sample response} : https://sunbirdstagingpublic.blob.core.windows.net/sample-name/reports/uploadFile2.jpg?st=2023-08-05T07%3A11%3A25Z&se=2024-02-03T14%3A11%3A25Z&sp=r&sv=2018-03-28&sr=b&sig=k66FWCIJ9NjoZfShccLmml3vOq9Lt%2FDirSrSN55UclU%3D
-
-              if (process.env.CLOUD_STORAGE_PROVIDER === "gcloud") {
-                responseObj.url = await cloudClient.getSignedUrl(
+               responseObj.url = await cloudClient.getDownloadableUrl(
                   bucketName,
                   element,
-                  linkExpireTime,                             // Link ExpireIn
-                  constants.common.READ_PERMISSION            //read/write permission
+                  linkExpireTime,                    // Link ExpireIn
+                  constants.common.READ_PERMISSION   //read/write permission
                 );
-              } else {
-                responseObj.url = await cloudClient.getDownloadableUrl(
-                  bucketName,
-                  element,
-                  linkExpireTime // Link ExpireIn
-                );
-              }
+              
 
               result.push(responseObj);
             })
@@ -87,21 +79,13 @@ module.exports = class FilesHelper {
         } else {
           let result;
           // Get the downloadable URL from the cloud client SDK.
-          if (process.env.CLOUD_STORAGE_PROVIDER === "gcloud") {
-            let getDownloadableUrl = await cloudClient.getSignedUrl(
-              bucketName,                                   // bucket name
-              filePath,                                     // resource file path
-              linkExpireTime,                               // Link Expire time
-              constants.common.READ_PERMISSION              //read/write permission
-            );
-            result = getDownloadableUrl[0];
-          } else {
+         
             result = await cloudClient.getDownloadableUrl(
-              bucketName,        // bucket name
-              filePath,          // resource file path
-              linkExpireTime     // Link Expire time
+              bucketName,                        // bucket name
+              filePath,                          // resource file path
+              linkExpireTime,                    // Link Expire time
+              constants.common.READ_PERMISSION   //read/write permission
             );
-          }
 
           let responseObj = {
             filePath: filePath,
