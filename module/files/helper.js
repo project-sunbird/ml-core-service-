@@ -160,7 +160,7 @@ module.exports = class FilesHelper {
             payload: { sourcePath: file },
             cloudStorage: cloudStorage.toUpperCase(),
           };
-          if (process.env.CLOUD_STORAGE_PROVIDER !== "gcloud") {
+          if (process.env.CLOUD_STORAGE_PROVIDER !== constants.common.G_CLOUD) {
             response.downloadableUrl = await cloudClient.getDownloadableUrl(
               bucket,
               file,

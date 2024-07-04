@@ -84,5 +84,6 @@ module.exports = {
   WRITE: "write",
   READ: "read",
   OFF: "OFF",
-  UPLOAD_FILE:"api/cloud-services/mlcore/v1/files/upload"
+  UPLOAD_FILE:"api/cloud-services/mlcore/v1/files/upload",
+  G_CLOUD:"gcloud",
 };
