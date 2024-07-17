@@ -166,6 +166,14 @@ module.exports = class FilesHelper {
               file,
               linkExpireTime // Link ExpireIn
             );
+          }else{
+            // Generate a read-only pre-signed URL for downloading a file from the GCloud bucket
+            response.getDownloadableUrl = await cloudClient.getSignedUrl(
+              bucket,         // bucket name
+              file,           // file path
+              linkExpireTime, // expire
+              constants.common.READ_PERMISSION  // read/write
+            );
           }
           if (!serviceUpload) {
             response.url = await cloudClient.getSignedUrl(
