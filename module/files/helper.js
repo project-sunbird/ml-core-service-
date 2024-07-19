@@ -159,22 +159,14 @@ module.exports = class FilesHelper {
             file: file,
             payload: { sourcePath: file },
             cloudStorage: cloudStorage.toUpperCase(),
-          };
-          if (process.env.CLOUD_STORAGE_PROVIDER !== constants.common.G_CLOUD) {
-            response.downloadableUrl = await cloudClient.getDownloadableUrl(
-              bucket,
-              file,
-              linkExpireTime // Link ExpireIn
-            );
-          }else{
-            // Generate a read-only pre-signed URL for downloading a file from the GCloud bucket
+          };         
+          // Generate a read-only pre-signed URL for downloading a file from the Cloud bucket
             response.getDownloadableUrl = await cloudClient.getSignedUrl(
               bucket,         // bucket name
               file,           // file path
               linkExpireTime, // expire
               constants.common.READ_PERMISSION  // read/write
             );
-          }
           if (!serviceUpload) {
             response.url = await cloudClient.getSignedUrl(
               bucket, // bucket name
