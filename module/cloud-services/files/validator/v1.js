@@ -11,6 +11,11 @@ module.exports = (req) => {
         preSignedUrls : function() {
             req.checkBody('request').exists().withMessage("request data is required");
             req.checkBody('ref').exists().withMessage("required reference type");
+        },
+        download : function() {
+            req.checkQuery('file').exists().withMessage("request file is required");
+            req.checkQuery('file').notEmpty().withMessage("file parameter cannot be empty");
+
         }
     }
 
