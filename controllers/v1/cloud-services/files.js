@@ -116,16 +116,19 @@ module.exports = class Files {
         });
     }
 
-      /**
+    /**
      * @api {post} /kendra/api/v1/cloud-services/files/getDownloadableUrl  
      * Get downloadable URL.
      * @apiVersion 1.0.0
      * @apiGroup Gcp
      * @apiHeader {String} X-authenticated-user-token Authenticity token
-     * @apiParamExample {json} Request:
+     * @apiParam {String[]} [filePaths] An array of file paths, can be sent via query parameters or request body.
+     * @apiParamExample {json} Request (Body):
      * {
-     *     "filePaths": []
+     *     "filePaths": ["file1.jpg","file2.jpg"]
      * }
+     * @apiParamExample {json} Request (Query):
+     * /kendra/api/v1/cloud-services/files/getDownloadableUrl?filePaths=["file1.jpg","file2.jpg"]
      * @apiSampleRequest /kendra/api/v1/cloud-services/files/getDownloadableUrl
      * @apiUse successBody
      * @apiUse errorBody
