@@ -128,7 +128,7 @@ module.exports = class Files {
      *     "filePaths": ["survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile.jpg","survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile2.jpg"]
      * }
      * @apiParamExample {json} Request (Query):
-     * /kendra/api/v1/cloud-services/files/getDownloadableUrl?filePaths=survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile.jpg,usurvey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile2.jpg
+     * /kendra/api/v1/cloud-services/files/getDownloadableUrl?filePaths=survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile.jpg,survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile2.jpg
      * @apiSampleRequest /kendra/api/v1/cloud-services/files/getDownloadableUrl
      * @apiUse successBody
      * @apiUse errorBody
