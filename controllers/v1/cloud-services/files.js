@@ -255,5 +255,29 @@ module.exports = class Files {
       }
     });
   }
+
+  async download(req) {
+    return new Promise(async (resolve, reject) => {
+
+        try {
+
+          let file = req.query.file;
+
+          let fileData =  await filesHelpers.getFileStreamFromFilePath(
+            file
+       );
+
+       return resolve(downloadableUrl)
+
+
+
+
+        } catch (error) {
+
+
+        }
+    })
+
+}
 };
 

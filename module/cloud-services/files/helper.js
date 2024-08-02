@@ -236,6 +236,48 @@ module.exports = class FilesHelper {
       }
     });
   }
+
+  static getFileStreamFromFilePath(file) {
+    return new Promise(async (resolve, reject) => {
+      try {
+        // Use fs.promises.readFile to read the file content asynchronously
+        let binaryDataOfFile = await fs.promises.readFile(localFilePath);
+
+        let uploadFile = await filesHelpers.upload(
+          folderPath,
+          bucketName,
+          binaryDataOfFile
+        );
+       // Use fs.promises.unlink to remove the file asynchronously
+        await fs.promises.unlink(localFilePath);
+       
+        if (!uploadFile.success) {
+          return resolve({
+            status: httpStatusCode["bad_request"].status,
+            message: constants.apiResponses.FAILED_TO_UPLOAD,
+            result: {},
+          });
+        }
+
+        return resolve({
+          status: httpStatusCode["ok"].status,
+          message: constants.apiResponses.CLOUD_SERVICE_SUCCESS_MESSAGE,
+          result: uploadFile.result,
+        });
+      } catch (error) {
+       
+        return reject({
+          status:
+            error.status || httpStatusCode["internal_server_error"].status,
+
+          message:
+            error.message || httpStatusCode["internal_server_error"].message,
+
+          errorObject: error,
+        });
+      }
+    });
+  }
 }
 
 
