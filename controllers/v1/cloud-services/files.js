@@ -260,20 +260,22 @@ module.exports = class Files {
     return new Promise(async (resolve, reject) => {
 
         try {
-
           let file = req.query.file;
-
           let fileData =  await filesHelpers.getFileStreamFromFilePath(
             file
-       );
-
-       return resolve(downloadableUrl)
-
-
-
+          );
+          return resolve(fileData)
 
         } catch (error) {
-
+          return reject({
+            status:
+              error.status || httpStatusCode["internal_server_error"].status,
+  
+            message:
+              error.message || httpStatusCode["internal_server_error"].message,
+  
+            errorObject: error,
+          });
 
         }
     })

@@ -35,7 +35,8 @@ var removedHeaders = [
 ];
 
 module.exports = async function (req, res, next) {
-
+  next()
+  return;
   removedHeaders.forEach(function (e) {
     delete req.headers[e];
   });

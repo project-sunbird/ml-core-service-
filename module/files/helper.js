@@ -11,7 +11,9 @@ const Zip = require("adm-zip");
 const fs = require("fs");
 const { cloudClient } = require(ROOT_PATH + "/config/cloud-service");
 let cloudStorage = process.env.CLOUD_STORAGE_PROVIDER;
-
+const https = require('https');
+const path = require('path');
+const moment = require('moment')
 /**
  * FilesHelper
  * @class
@@ -379,6 +381,70 @@ module.exports = class FilesHelper {
   static removeFolder(path) {
     _removeFolder(path);
     return;
+  }
+
+  static getFileStreamFromFilePath(file,bucket){
+    return new Promise(async (resolve, reject) => {
+      try {
+        let noOfMinutes = constants.common.NO_OF_MINUTES;
+        let linkExpireTime = constants.common.NO_OF_EXPIRY_TIME * noOfMinutes;
+    
+         let signedUrl = await cloudClient.getSignedUrl(
+                  bucket,         // bucket name
+                  file,           // file path
+                  linkExpireTime, // expire
+                  constants.common.READ_PERMISSION  // read/write
+         );
+        
+        let response;
+        // Fetch data from the URL
+        response = await this.fetchDataAndProcess(file,signedUrl);
+        resolve(response)
+
+      } catch (error) {
+        return reject(error)
+      }
+    });
+
+  }
+
+  static fetchDataAndProcess(file,url) {
+    return new Promise((resolve, reject) => {
+      let currentMoment = moment(new Date());
+      let formattedDate = currentMoment.format("DD-MM-YYYY");
+      if (!fs.existsSync(`${ROOT_PATH}/public/assets/${formattedDate}`)) {
+        fs.mkdirSync(`${ROOT_PATH}/public/assets/${formattedDate}`);
+      }
+
+      let filename = path.basename(file);
+      let localFilePath = `${ROOT_PATH}/public/assets/${formattedDate}/${filename}`;
+      // Create a writable file stream
+      let fileStream;
+      try {
+        fileStream = fs.createWriteStream(localFilePath);
+      } catch (err) {
+        return reject(new Error(`Failed to create write stream: ${err.message}`));
+      }
+
+      // Fetch data from the URL and stream to the file
+      const request = https.get(url, (response) => {
+        if (response.statusCode !== 200) {
+          return reject(new Error(`Failed to get data: ${response.statusMessage}`));
+        }
+        response.pipe(fileStream);
+  
+         fileStream.on('finish', () => {
+           resolve({
+             isResponseAStream: true,
+             fileNameWithPath: localFilePath
+           });
+         });
+  
+         fileStream.on('error',reject);
+      });
+  
+       request.on('error', reject);
+    });
   }
 };
 
