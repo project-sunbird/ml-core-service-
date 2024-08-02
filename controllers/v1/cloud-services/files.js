@@ -152,9 +152,16 @@ module.exports = class Files {
 
             try {
 
+                //allows file array to be takes as query as well as body
+                if(req.query.filePaths){
+                  req.query.filePaths = JSON.parse(req.query.filePaths);
+                }
+
+                let filePaths = req.query.filePaths || req.body.filePaths;
+
                 let downloadableUrl =
                 await filesHelpers.getDownloadableUrl(
-                     req.body.filePaths
+                    filePaths
                 );
 
                 return resolve(downloadableUrl)
