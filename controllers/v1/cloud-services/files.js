@@ -256,7 +256,7 @@ module.exports = class Files {
     });
   }
 
-  async download(req,res) {
+  async download(req) {
     return new Promise(async (resolve, reject) => {
       try {
         let file = req.query.file;
