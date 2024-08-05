@@ -11,6 +11,7 @@ let filesHelpers = require(ROOT_PATH+"/module/cloud-services/files/helper");
 const path = require("path");
 const fs = require("fs");
 const moment = require("moment-timezone");
+const https = require('https');
 /**
     * Files service.
     * @class
@@ -256,29 +257,38 @@ module.exports = class Files {
     });
   }
 
-  async download(req) {
+  async download(req,res) {
     return new Promise(async (resolve, reject) => {
-
-        try {
-          let file = req.query.file;
-          let fileData =  await filesHelpers.getFileStreamFromFilePath(
-            file
-          );
-          return resolve(fileData)
-
-        } catch (error) {
-          return reject({
-            status:
-              error.status || httpStatusCode["internal_server_error"].status,
-  
-            message:
-              error.message || httpStatusCode["internal_server_error"].message,
-  
-            errorObject: error,
+      try {
+        let file = req.query.file;
+        let extName = path.extname(file);
+        let uniqueFileName = 'File_'+gen.utils.generateUniqueId()+extName;
+        let fileURL = await filesHelpers.getFileURLFromFilePath(file);
+        https
+          .get(fileURL, (fileStream) => {
+            res.setHeader(
+              "Content-Disposition",
+              `attachment; filename="${uniqueFileName}"`
+            ); 
+            res.setHeader("Content-Type", fileStream.headers["content-type"]);
+            fileStream.pipe(res);
+          })
+          .on("error", (err) => {
+            console.error("Error downloading the file:", err);
+            throw err;
           });
+      } catch (error) {
+        return reject({
+          status:
+            error.status || httpStatusCode["internal_server_error"].status,
 
-        }
-    })
+          message:
+            error.message || httpStatusCode["internal_server_error"].message,
+
+          errorObject: error,
+        });
+      }
+    });
 
 }
 };

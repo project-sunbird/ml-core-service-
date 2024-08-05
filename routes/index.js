@@ -47,10 +47,10 @@ module.exports = function (app) {
 
         if (req.params.file) {
           result = 
-          await controllers[req.params.version][req.params.controller][req.params.file][req.params.method](req);
+          await controllers[req.params.version][req.params.controller][req.params.file][req.params.method](req,res);
         } else {
           result = 
-          await controllers[req.params.version][req.params.controller][req.params.method](req);
+          await controllers[req.params.version][req.params.controller][req.params.method](req,res);
         }
 
         if (result.isResponseAStream == true) {

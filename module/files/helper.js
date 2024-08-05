@@ -383,7 +383,7 @@ module.exports = class FilesHelper {
     return;
   }
 
-  static getFileStreamFromFilePath(file,bucket){
+  static getFileURLFromFilePath(file,bucket){
     return new Promise(async (resolve, reject) => {
       try {
         let noOfMinutes = constants.common.NO_OF_MINUTES;
@@ -396,11 +396,7 @@ module.exports = class FilesHelper {
                   constants.common.READ_PERMISSION  // read/write
          );
         let signedUrl = this.extractURL(signedUrlResponse);
-
-        let response;
-        // Fetch data from the URL
-        response = await this.fetchDataAndProcess(file,signedUrl);
-        resolve(response)
+        resolve(signedUrl)
 
       } catch (error) {
         return reject(error)
@@ -409,44 +405,6 @@ module.exports = class FilesHelper {
 
   }
 
-  static fetchDataAndProcess(file,url) {
-    return new Promise((resolve, reject) => {
-      let currentMoment = moment(new Date());
-      let formattedDate = currentMoment.format("DD-MM-YYYY");
-      if (!fs.existsSync(`${ROOT_PATH}/public/assets/${formattedDate}`)) {
-        fs.mkdirSync(`${ROOT_PATH}/public/assets/${formattedDate}`);
-      }
-
-      let filename = path.basename(file);
-      let localFilePath = `${ROOT_PATH}/public/assets/${formattedDate}/${filename}`;
-      // Create a writable file stream
-      let fileStream;
-      try {
-        fileStream = fs.createWriteStream(localFilePath);
-      } catch (err) {
-        return reject(new Error(`Failed to create write stream: ${err.message}`));
-      }
-
-      // Fetch data from the URL and stream to the file
-      const request = https.get(url, (response) => {
-        if (response.statusCode !== 200) {
-          return reject(new Error(`Failed to get data: ${response.statusMessage}`));
-        }
-        response.pipe(fileStream);
-  
-         fileStream.on('finish', () => {
-           resolve({
-             isResponseAStream: true,
-             fileNameWithPath: localFilePath
-           });
-         });
-  
-         fileStream.on('error',reject);
-      });
-  
-       request.on('error', reject);
-    });
-  }
   static extractURL(input) {
     if (typeof input === 'string') {
       return input;
