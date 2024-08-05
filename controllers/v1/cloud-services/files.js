@@ -258,27 +258,27 @@ module.exports = class Files {
 
   async download(req) {
     return new Promise(async (resolve, reject) => {
+      try {
+        let file = req.query.file;
+        let fileURL = await filesHelpers.getFileURLFromFilePath(file);
+        return resolve({
+          isResponseAStream:true,
+          fileURL,
+          file
+        })
 
-        try {
-          let file = req.query.file;
-          let fileData =  await filesHelpers.getFileStreamFromFilePath(
-            file
-          );
-          return resolve(fileData)
+      } catch (error) {
+        return reject({
+          status:
+            error.status || httpStatusCode["internal_server_error"].status,
 
-        } catch (error) {
-          return reject({
-            status:
-              error.status || httpStatusCode["internal_server_error"].status,
-  
-            message:
-              error.message || httpStatusCode["internal_server_error"].message,
-  
-            errorObject: error,
-          });
+          message:
+            error.message || httpStatusCode["internal_server_error"].message,
 
-        }
-    })
+          errorObject: error,
+        });
+      }
+    });
 
 }
 };

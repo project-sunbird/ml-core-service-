@@ -237,11 +237,11 @@ module.exports = class FilesHelper {
     });
   }
 
-  static getFileStreamFromFilePath(file) {
+  static getFileURLFromFilePath(file) {
     return new Promise(async (resolve, reject) => {
       try {
 
-        let fileStreamOutput = await filesHelpers.getFileStreamFromFilePath(file,bucketName);
+        let fileStreamOutput = await filesHelpers.getFileURLFromFilePath(file,bucketName);
         resolve(fileStreamOutput);
 
       } catch (error) {
