@@ -389,13 +389,14 @@ module.exports = class FilesHelper {
         let noOfMinutes = constants.common.NO_OF_MINUTES;
         let linkExpireTime = constants.common.NO_OF_EXPIRY_TIME * noOfMinutes;
     
-         let signedUrl = await cloudClient.getSignedUrl(
+        let signedUrlResponse =  await cloudClient.getSignedUrl(
                   bucket,         // bucket name
                   file,           // file path
                   linkExpireTime, // expire
                   constants.common.READ_PERMISSION  // read/write
          );
-        
+        let signedUrl = this.extractURL(signedUrlResponse);
+
         let response;
         // Fetch data from the URL
         response = await this.fetchDataAndProcess(file,signedUrl);
@@ -445,6 +446,15 @@ module.exports = class FilesHelper {
   
        request.on('error', reject);
     });
+  }
+  static extractURL(input) {
+    if (typeof input === 'string') {
+      return input;
+    } else if (Array.isArray(input)) {
+      return input[0];
+    } else {
+      throw new Error("Input must be a string or an array");
+    }
   }
 };
 
