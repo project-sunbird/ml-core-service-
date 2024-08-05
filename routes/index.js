@@ -56,7 +56,9 @@ module.exports = function (app) {
         }
 
         if (result.isResponseAStream == true) {
+
           if(result.fileNameWithPath){
+
             fs.exists(result.fileNameWithPath, function (exists) {
 
               if (exists) {
@@ -76,7 +78,9 @@ module.exports = function (app) {
               }
   
             });
+
           }else if(result.fileURL){
+
             let extName = path.extname(result.file);
             let uniqueFileName = 'File_'+gen.utils.generateUniqueId()+extName;
             https
@@ -92,6 +96,7 @@ module.exports = function (app) {
               console.error("Error downloading the file:", err);
               throw err;
             });
+            
           }
           else {
 
