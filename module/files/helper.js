@@ -163,23 +163,19 @@ module.exports = class FilesHelper {
             cloudStorage: cloudStorage.toUpperCase(),
           };         
           // Generate a read-only pre-signed URL for downloading a file from the Cloud bucket
-            let signedUrlResponse = await cloudClient.getSignedUrl(
+            response.getDownloadableUrl = await cloudClient.getSignedUrl(
               bucket,         // bucket name
               file,           // file path
               linkExpireTime, // expire
               constants.common.READ_PERMISSION  // read/write
             );
-            let validUrl = this.extractURL(signedUrlResponse);
-            response.getDownloadableUrl = validUrl;
           if (!serviceUpload) {
-            let signedUrlResponse=  await cloudClient.getSignedUrl(
+            response.url = await cloudClient.getSignedUrl(
               bucket, // bucket name
               file, // file path
               linkExpireTime, // expire
               actionPermission // read/write
             );
-            let validUrl = this.extractURL(signedUrlResponse);
-            response.url = validUrl;
           } else {
             response.url = `${process.env.PUBLIC_BASE_URL}/${constants.common.UPLOAD_FILE}?file=${file}`;
           }
