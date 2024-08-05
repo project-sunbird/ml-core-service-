@@ -68,6 +68,11 @@ module.exports = function (app) {
                 res.set('Content-Type', 'application/octet-stream');
                 fs.createReadStream(result.fileNameWithPath).pipe(res);
   
+              }else{
+                throw {
+                  status: 500,
+                  message: "Oops! Something went wrong!"
+                };
               }
   
             });
