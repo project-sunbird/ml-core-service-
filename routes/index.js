@@ -11,6 +11,8 @@ const pagination = require(ROOT_PATH + "/generics/middleware/pagination");
 const fs = require("fs");
 const inputValidator = require(ROOT_PATH + "/generics/middleware/validator");
 const dataSetUpload = require(ROOT_PATH + "/generics/middleware/dataSetUpload");
+const path = require('path');
+const https = require('https');
 
 module.exports = function (app) {
 
@@ -47,34 +49,53 @@ module.exports = function (app) {
 
         if (req.params.file) {
           result = 
-          await controllers[req.params.version][req.params.controller][req.params.file][req.params.method](req,res);
+          await controllers[req.params.version][req.params.controller][req.params.file][req.params.method](req);
         } else {
           result = 
-          await controllers[req.params.version][req.params.controller][req.params.method](req,res);
+          await controllers[req.params.version][req.params.controller][req.params.method](req);
         }
 
         if (result.isResponseAStream == true) {
-          fs.exists(result.fileNameWithPath, function (exists) {
+          if(result.fileNameWithPath){
+            fs.exists(result.fileNameWithPath, function (exists) {
 
-            if (exists) {
-
+              if (exists) {
+  
+                res.setHeader(
+                  'Content-disposition', 
+                  'attachment; filename=' + result.fileNameWithPath.split('/').pop()
+                );
+                res.set('Content-Type', 'application/octet-stream');
+                fs.createReadStream(result.fileNameWithPath).pipe(res);
+  
+              }
+  
+            });
+          }else if(result.fileURL){
+            let extName = path.extname(result.file);
+            let uniqueFileName = 'File_'+gen.utils.generateUniqueId()+extName;
+            https
+            .get(result.fileURL, (fileStream) => {
               res.setHeader(
-                'Content-disposition', 
-                'attachment; filename=' + result.fileNameWithPath.split('/').pop()
-              );
-              res.set('Content-Type', 'application/octet-stream');
-              fs.createReadStream(result.fileNameWithPath).pipe(res);
+                "Content-Disposition",
+                `attachment; filename="${uniqueFileName}"`
+              ); 
+              res.setHeader("Content-Type", fileStream.headers["content-type"]);
+              fileStream.pipe(res);
+            })
+            .on("error", (err) => {
+              console.error("Error downloading the file:", err);
+              throw err;
+            });
+          }
+          else {
 
-            } else {
+            throw {
+              status: 500,
+              message: "Oops! Something went wrong!"
+            };
 
-              throw {
-                status: 500,
-                message: "Oops! Something went wrong!"
-              };
-
-            }
-
-          });
+          }
 
         } else {
           res.status(result.status ? result.status : httpStatusCode["ok"].status).json({

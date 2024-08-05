@@ -11,7 +11,6 @@ let filesHelpers = require(ROOT_PATH+"/module/cloud-services/files/helper");
 const path = require("path");
 const fs = require("fs");
 const moment = require("moment-timezone");
-const https = require('https');
 /**
     * Files service.
     * @class
@@ -261,22 +260,13 @@ module.exports = class Files {
     return new Promise(async (resolve, reject) => {
       try {
         let file = req.query.file;
-        let extName = path.extname(file);
-        let uniqueFileName = 'File_'+gen.utils.generateUniqueId()+extName;
         let fileURL = await filesHelpers.getFileURLFromFilePath(file);
-        https
-          .get(fileURL, (fileStream) => {
-            res.setHeader(
-              "Content-Disposition",
-              `attachment; filename="${uniqueFileName}"`
-            ); 
-            res.setHeader("Content-Type", fileStream.headers["content-type"]);
-            fileStream.pipe(res);
-          })
-          .on("error", (err) => {
-            console.error("Error downloading the file:", err);
-            throw err;
-          });
+        return resolve({
+          isResponseAStream:true,
+          fileURL,
+          file
+        })
+
       } catch (error) {
         return reject({
           status:
