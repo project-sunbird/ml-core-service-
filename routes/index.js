@@ -57,54 +57,48 @@ module.exports = function (app) {
 
         if (result.isResponseAStream == true) {
 
-          if(result.fileNameWithPath){
-
+          if (result.fileNameWithPath) {
             fs.exists(result.fileNameWithPath, function (exists) {
-
               if (exists) {
-  
                 res.setHeader(
-                  'Content-disposition', 
-                  'attachment; filename=' + result.fileNameWithPath.split('/').pop()
+                  "Content-disposition",
+                  "attachment; filename=" +
+                    result.fileNameWithPath.split("/").pop()
                 );
-                res.set('Content-Type', 'application/octet-stream');
+                res.set("Content-Type", "application/octet-stream");
                 fs.createReadStream(result.fileNameWithPath).pipe(res);
-  
-              }else{
+              } else {
                 throw {
                   status: 500,
-                  message: "Oops! Something went wrong!"
+                  message: "Oops! Something went wrong!",
                 };
               }
-  
             });
-
-          }else if(result.fileURL){
-
+          } else if (result.fileURL) {
             let extName = path.extname(result.file);
-            let uniqueFileName = 'File_'+gen.utils.generateUniqueId()+extName;
+            let uniqueFileName =
+              "File_" + gen.utils.generateUniqueId() + extName;
             https
-            .get(result.fileURL, (fileStream) => {
-              res.setHeader(
-                "Content-Disposition",
-                `attachment; filename="${uniqueFileName}"`
-              ); 
-              res.setHeader("Content-Type", fileStream.headers["content-type"]);
-              fileStream.pipe(res);
-            })
-            .on("error", (err) => {
-              console.error("Error downloading the file:", err);
-              throw err;
-            });
-            
-          }
-          else {
-
+              .get(result.fileURL, (fileStream) => {
+                res.setHeader(
+                  "Content-Disposition",
+                  `attachment; filename="${uniqueFileName}"`
+                );
+                res.setHeader(
+                  "Content-Type",
+                  fileStream.headers["content-type"]
+                );
+                fileStream.pipe(res);
+              })
+              .on("error", (err) => {
+                console.error("Error downloading the file:", err);
+                throw err;
+              });
+          } else {
             throw {
               status: 500,
-              message: "Oops! Something went wrong!"
+              message: "Oops! Something went wrong!",
             };
-
           }
 
         } else {
