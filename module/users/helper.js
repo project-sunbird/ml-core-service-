@@ -5,6 +5,7 @@
  * Description : All User related information including sys_admin.
  */
 
+
 // Dependencies
 const programsHelper = require(MODULES_BASE_PATH + "/programs/helper");
 const solutionsHelper = require(MODULES_BASE_PATH + "/solutions/helper");
@@ -13,6 +14,7 @@ const entitiesHelper = require(MODULES_BASE_PATH + "/entities/helper");
 const improvementProjectService = require(ROOT_PATH + "/generics/services/improvement-project");
 const userService = require(ROOT_PATH + "/generics/services/users");
 const formService = require(ROOT_PATH + '/generics/services/form');
+const surveyService = require(ROOT_PATH + '/generics/services/survey');
 
 
 /**
@@ -216,7 +218,7 @@ module.exports = class UsersHelper {
             {
               _id: data.solutionId,
             },
-            ["name", "link", "type", "subType", "externalId", "description"]
+            ["name", "link", "type", "subType", "externalId", "description", "certificateTemplateId"]
           );
 
           if ( !solutionData.length > 0 ) {
@@ -470,7 +472,6 @@ module.exports = class UsersHelper {
             
         let totalCount = 0;
         let mergedData = [];
-
         let projectSolutionIdIndexMap = {}
 
         if (
@@ -534,7 +535,43 @@ module.exports = class UsersHelper {
           let endIndex = startIndex + pageSize;
           mergedData = mergedData.slice(startIndex, endIndex);
         }
-
+        
+        // get all solutionIds of type survey
+        let surveySolutionIds = [];
+        mergedData.forEach( element => {
+          if( element.type === constants.common.SURVEY ) {
+            surveySolutionIds.push(element._id)
+          }
+        });
+        
+        
+        if ( surveySolutionIds.length > 0 ) {
+          let userSurveySubmission = 
+              await surveyService.assignedSurveys(
+                token,
+                "",
+                "",
+                false,
+                surveySolutionIds
+            );
+        
+            if ( userSurveySubmission.success &&
+                  userSurveySubmission.data &&
+                  userSurveySubmission.data.data &&
+                  userSurveySubmission.data.data.length > 0        
+            ) {
+              for ( let surveySubmissionPointer = 0; surveySubmissionPointer < userSurveySubmission.data.data.length; surveySubmissionPointer++ ) {
+                for ( let mergedDataPointer = 0; mergedDataPointer < mergedData.length; mergedDataPointer++ ) {
+                  if ( mergedData[mergedDataPointer].type == constants.common.SURVEY && userSurveySubmission.data.data[surveySubmissionPointer].solutionId == mergedData[mergedDataPointer]._id ) {
+                    mergedData[mergedDataPointer].submissionId = userSurveySubmission.data.data[surveySubmissionPointer].submissionId;
+                    break;
+                  }
+                
+                }
+              }
+            }
+        }
+        
         let result = {
           programName: programData[0].name,
           programId: programId,
