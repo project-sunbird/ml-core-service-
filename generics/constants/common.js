@@ -72,5 +72,6 @@ module.exports = {
   "PROFILE_CONFIG_FORM_KEY" : "profileConfig_v2",
   "SERVER_TIME_OUT" : 5000,
   "CERTIFICATE" : "certificate",
-  "ORACLE_CLOUD_SERVICE" : "OCI"
+  "ORACLE_CLOUD_SERVICE" : "OCI",
+  "PERSONA":"persona"
 };
