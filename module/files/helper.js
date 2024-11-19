@@ -62,7 +62,7 @@ module.exports = class FilesHelper {
               responseObj.filePath = element;
               // Get the downloadable URL from the cloud client SDK.
               // {sample response} : https://sunbirdstagingpublic.blob.core.windows.net/sample-name/reports/uploadFile2.jpg?st=2023-08-05T07%3A11%3A25Z&se=2024-02-03T14%3A11%3A25Z&sp=r&sv=2018-03-28&sr=b&sig=k66FWCIJ9NjoZfShccLmml3vOq9Lt%2FDirSrSN55UclU%3D
-               responseObj.url = await cloudClient.getDownloadableUrl(
+               responseObj.url = await cloudClient.getSignedUrl(
                   bucketName,
                   element,
                   linkExpireTime,                    // Link ExpireIn
@@ -82,7 +82,7 @@ module.exports = class FilesHelper {
           let result;
           // Get the downloadable URL from the cloud client SDK.
          
-            result = await cloudClient.getDownloadableUrl(
+            result = await cloudClient.getSignedUrl(
               bucketName,                        // bucket name
               filePath,                          // resource file path
               linkExpireTime,                    // Link Expire time

@@ -116,27 +116,39 @@ module.exports = class Files {
         });
     }
 
-      /**
+    /**
      * @api {post} /kendra/api/v1/cloud-services/files/getDownloadableUrl  
      * Get downloadable URL.
      * @apiVersion 1.0.0
      * @apiGroup Gcp
      * @apiHeader {String} X-authenticated-user-token Authenticity token
-     * @apiParamExample {json} Request:
+     * @apiParam {String[]} [filePaths] An array of file paths, can be sent via query parameters or request body.
+     * @apiParamExample {json} Request (Body):
      * {
-     *     "filePaths": []
+     *     "filePaths": ["survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile.jpg","survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile2.jpg"]
      * }
+     * @apiParamExample {json} Request (Query):
+     * /kendra/api/v1/cloud-services/files/getDownloadableUrl?filePaths=survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile.jpg,survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile2.jpg
      * @apiSampleRequest /kendra/api/v1/cloud-services/files/getDownloadableUrl
      * @apiUse successBody
      * @apiUse errorBody
      * @apiParamExample {json} Response:
      * {
-     *  "status": 200,
-     *  "message": "Url's generated successfully",
-     *  "result": [{
-     *  "filePath": "5e1c28a050452374e1cf9841/e97b5582-471c-4649-8401-3cc4249359bb/cdv_photo_117.jpg",
-     *  "url": "https://storage.googleapis.com/download/storage/v1/b/sl-dev-storage/o/5e1c28a050452374e1cf9841%2Fe97b5582-471c-4649-8401-3cc4249359bb%2Fcdv_photo_117.jpg?generation=1579240054787924&alt=media"
-     * }]
+     *      "message": "Url's generated successfully",
+     *       "status": 200,
+     *       "result": [
+     *           {
+     *               "cloudStorage": "oci",
+     *               "filePath": "survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile.jpg",
+     *               "url": "https://ax2cel5zyviy.compat.objectstorage.ap-hyderabad-1.oraclecloud.com/samiksha/survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=3737771d26e1d8f211a04ec59cfd3037c8d1c6ff%2F20240802%2Fap-hyderabad-1%2Fs3%2Faws4_request&X-Amz-Date=20240802T051354Z&X-Amz-Expires=1800&X-Amz-Signature=4ed5c7327315bb8cba99f4c99a71178fffdbc62156e0f1b2ba471a17533eb4dc&X-Amz-SignedHeaders=host&x-id=GetObject"
+     *           },
+     *           {
+     *               "cloudStorage": "oci",
+     *               "filePath": "survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile2.jpg",
+     *               "url": "https://ax2cel5zyviy.compat.objectstorage.ap-hyderabad-1.oraclecloud.com/samiksha/survey/5f72f9998925ec7c60f79a91//e7455f6c-468d-4fdf-9f6c-546d6b7d1370/uploadFile2.jpg?X-Amz-Algorithm=AWS4-HMAC-SHA256&X-Amz-Content-Sha256=UNSIGNED-PAYLOAD&X-Amz-Credential=3737771d26e1d8f211a04ec59cfd3037c8d1c6ff%2F20240802%2Fap-hyderabad-1%2Fs3%2Faws4_request&X-Amz-Date=20240802T051354Z&X-Amz-Expires=1800&X-Amz-Signature=6c86d4465d9150af2b7bccd0ce81624367447f67b6a5c9b88c40cfff7b5047f9&X-Amz-SignedHeaders=host&x-id=GetObject"
+     *           }
+     *       ]
+     *   }
      */
 
     /**
@@ -152,9 +164,16 @@ module.exports = class Files {
 
             try {
 
+                //allows file array to be taken from req.query as well as req.body
+                if(req.query.filePaths){
+                  req.query.filePaths = req.query.filePaths.split(',').map(filePath => filePath.trim()).filter(filePath => filePath.length > 0);
+                }
+
+                let filePaths = req.query.filePaths || req.body.filePaths;
+
                 let downloadableUrl =
                 await filesHelpers.getDownloadableUrl(
-                     req.body.filePaths
+                    filePaths
                 );
 
                 return resolve(downloadableUrl)
