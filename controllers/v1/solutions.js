@@ -121,7 +121,8 @@ module.exports = class Solutions extends Abstract {
         let solutionData = await solutionsHelper.update(
           req.params._id, 
           req.body, 
-          req.userDetails.id
+          req.userDetails.id,
+          true
         );
 
         return resolve(solutionData);
