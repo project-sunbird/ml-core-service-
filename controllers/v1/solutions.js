@@ -71,7 +71,8 @@ module.exports = class Solutions extends Abstract {
       try {
 
         let solutionData = await solutionsHelper.createSolution(
-          req.body
+          req.body,
+          true
         );
 
         solutionData["result"] = solutionData.data;

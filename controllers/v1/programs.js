@@ -222,7 +222,8 @@ module.exports = class Programs extends Abstract {
         let programUpdationData = await programsHelper.update(
           req.params._id,
           req.body,
-          req.userDetails.userId
+          req.userDetails.userId,
+          true
         );
         
         programUpdationData.result = programUpdationData.data;

@@ -428,8 +428,10 @@ module.exports = class SolutionsHelper {
             _id : solutionId
           };
 
-          let solutionDocument = 
-          await this.solutionDocuments(queryObject, ["_id"]);
+          let solutionDocument = await this.solutionDocuments(queryObject, [
+            "_id",
+            "programId",
+          ]);
 
           if (!solutionDocument.length > 0 ) {
             return resolve({
@@ -440,7 +442,7 @@ module.exports = class SolutionsHelper {
 
           if (
             checkDate &&
-            (solutionData.hasOwnProperty("endDate") ||
+            (solutionData.hasOwnProperty("startDate") ||
               solutionData.hasOwnProperty("endDate"))
           ) {
             let programData = await programsHelper.programDocuments(
