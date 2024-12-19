@@ -99,6 +99,7 @@ module.exports = class SolutionsHelper {
    * @method 
    * @name createSolution
    * @param {Object} solutionData - solution creation data.
+   * @param {Boolean} checkDate to accommodate timezone difference in the sent date
    * @returns {JSON} solution creation data. 
    */
   
@@ -417,6 +418,7 @@ module.exports = class SolutionsHelper {
    * @name update
    * @param {String} solutionId - solution id.
    * @param {Object} solutionData - solution creation data.
+   * @param {Boolean} checkDate to accommodate timezone difference in the sent date
    * @returns {JSON} solution creation data. 
    */
   

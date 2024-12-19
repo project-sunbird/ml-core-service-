@@ -71,6 +71,7 @@ module.exports = class ProgramsHelper {
    * @method
    * @name create
    * @param {Array} data 
+   * @param {Boolean} checkDate to accommodate timezone difference in the sent date
    * @returns {JSON} - create program.
    */
 
@@ -347,6 +348,7 @@ module.exports = class ProgramsHelper {
    * @param {String} programId - program id.
    * @param {Array} data 
    * @param {String} userId
+   * @param {Boolean} checkDate to accommodate timezone difference in the sent date
    * @returns {JSON} - update program.
    */
 
