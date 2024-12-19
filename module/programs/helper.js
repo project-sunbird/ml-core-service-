@@ -11,7 +11,8 @@ const entityTypesHelper = require(MODULES_BASE_PATH + "/entityTypes/helper");
 const entitiesHelper = require(MODULES_BASE_PATH + "/entities/helper");
 const userRolesHelper = require(MODULES_BASE_PATH + "/user-roles/helper");
 const userService = require(ROOT_PATH + "/generics/services/users");
-
+const timeZoneDifference =
+  process.env.TIMEZONE_DIFFRENECE_BETWEEN_LOCAL_TIME_AND_UTC;
 /**
     * ProgramsHelper
     * @class
@@ -70,10 +71,11 @@ module.exports = class ProgramsHelper {
    * @method
    * @name create
    * @param {Array} data 
+   * @param {Boolean} checkDate to accommodate timezone difference in the sent date
    * @returns {JSON} - create program.
    */
 
-  static create(data) {
+  static create(data, checkDate = false) {
 
     return new Promise(async (resolve, reject) => {
 
@@ -105,6 +107,25 @@ module.exports = class ProgramsHelper {
           "components" : [],
           "isAPrivateProgram" : data.isAPrivateProgram ? data.isAPrivateProgram : false  
         }
+
+        if (checkDate) {
+          if (data.hasOwnProperty("endDate")) {
+            data.endDate = gen.utils.getEndDate(
+              data.endDate,
+              timeZoneDifference
+            );
+          }
+          if (data.hasOwnProperty("startDate")) {
+            data.startDate = gen.utils.getStartDate(
+              data.startDate,
+              timeZoneDifference
+            );
+          }
+        }
+
+        _.assign(programData, {
+          ...data,
+        });
         
         let program = await database.models.programs.create(
           programData
@@ -327,10 +348,11 @@ module.exports = class ProgramsHelper {
    * @param {String} programId - program id.
    * @param {Array} data 
    * @param {String} userId
+   * @param {Boolean} checkDate to accommodate timezone difference in the sent date
    * @returns {JSON} - update program.
    */
 
-  static update(programId,data,userId) {
+  static update(programId,data,userId, checkDate = false) {
 
     return new Promise( async (resolve, reject) => {
 
@@ -339,6 +361,20 @@ module.exports = class ProgramsHelper {
         data.updatedBy = userId;
         data.updatedAt = new Date();
 
+        if (checkDate) {
+          if (data.hasOwnProperty("endDate")) {
+            data.endDate = gen.utils.getEndDate(
+              data.endDate,
+              timeZoneDifference
+            );
+          }
+          if (data.hasOwnProperty("startDate")) {
+            data.startDate = gen.utils.getStartDate(
+              data.startDate,
+              timeZoneDifference
+            );
+          }
+        }
         let program = await database.models.programs.findOneAndUpdate({
           _id : programId
         },{ $set : _.omit(data,["scope"]) }, { new: true });

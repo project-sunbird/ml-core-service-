@@ -14,7 +14,8 @@ const improvementProjectService = require(ROOT_PATH + '/generics/services/improv
 const appsPortalBaseUrl = process.env.APP_PORTAL_BASE_URL + "/" ;
 const userExtensionsHelperV2 = require(MODULES_BASE_PATH + "/user-extension/helperv2");
 const userService = require(ROOT_PATH + "/generics/services/users");
-
+const timeZoneDifference =
+  process.env.TIMEZONE_DIFFRENECE_BETWEEN_LOCAL_TIME_AND_UTC;
 /**
     * SolutionsHelper
     * @class
@@ -98,16 +99,17 @@ module.exports = class SolutionsHelper {
    * @method 
    * @name createSolution
    * @param {Object} solutionData - solution creation data.
+   * @param {Boolean} checkDate to accommodate timezone difference in the sent date
    * @returns {JSON} solution creation data. 
    */
   
-   static createSolution(solutionData) {
+   static createSolution(solutionData, checkDate = false) {
     return new Promise(async (resolve, reject) => {
         try {
 
           let programData = await programsHelper.programDocuments({
             externalId : solutionData.programExternalId
-          },["name","description","scope"]);
+          },["name","description","scope","endDate", "startDate"]);
 
           if ( !programData.length > 0 ) {
             throw {
@@ -178,6 +180,27 @@ module.exports = class SolutionsHelper {
 
           solutionData.status = constants.common.ACTIVE;
     
+          if (checkDate) {
+            if (solutionData.hasOwnProperty("endDate")) {
+              solutionData.endDate = gen.utils.getEndDate(
+                solutionData.endDate,
+                timeZoneDifference
+              );
+              if (solutionData.endDate > programData[0].endDate) {
+                solutionData.endDate = programData[0].endDate;
+              }
+            }
+            if (solutionData.hasOwnProperty("startDate")) {
+              solutionData.startDate = gen.utils.getStartDate(
+                solutionData.startDate,
+                timeZoneDifference
+              );
+              if (solutionData.startDate < programData[0].startDate) {
+                solutionData.startDate = programData[0].startDate;
+              }
+            }
+          }
+
           let solutionCreation = 
           await database.models.solutions.create(
             _.omit(solutionData,["scope"])
@@ -395,10 +418,11 @@ module.exports = class SolutionsHelper {
    * @name update
    * @param {String} solutionId - solution id.
    * @param {Object} solutionData - solution creation data.
+   * @param {Boolean} checkDate to accommodate timezone difference in the sent date
    * @returns {JSON} solution creation data. 
    */
   
-   static update(solutionId, solutionData, userId) {
+   static update(solutionId, solutionData, userId, checkDate = false) {
     return new Promise(async (resolve, reject) => {
         try {
 
@@ -406,8 +430,10 @@ module.exports = class SolutionsHelper {
             _id : solutionId
           };
 
-          let solutionDocument = 
-          await this.solutionDocuments(queryObject, ["_id"]);
+          let solutionDocument = await this.solutionDocuments(queryObject, [
+            "_id",
+            "programId",
+          ]);
 
           if (!solutionDocument.length > 0 ) {
             return resolve({
@@ -415,6 +441,44 @@ module.exports = class SolutionsHelper {
               message: constants.apiResponses.SOLUTION_NOT_FOUND
             });
           }
+
+          if (
+            checkDate &&
+            (solutionData.hasOwnProperty("startDate") ||
+              solutionData.hasOwnProperty("endDate"))
+          ) {
+            let programData = await programsHelper.programDocuments(
+              {
+                _id: solutionDocument[0].programId,
+              },
+              ["_id", "endDate", "startDate"]
+            );
+  
+            if (!programData.length > 0) {
+              throw {
+                message: constants.apiResponses.PROGRAM_NOT_FOUND,
+              };
+            }
+            if (solutionData.hasOwnProperty("endDate")) {
+              solutionData.endDate = gen.utils.getEndDate(
+                solutionData.endDate,
+                timeZoneDifference
+              );
+              if (solutionData.endDate > programData[0].endDate) {
+                solutionData.endDate = programData[0].endDate;
+              }
+            }
+            if (solutionData.hasOwnProperty("startDate")) {
+              solutionData.startDate = gen.utils.getStartDate(
+                solutionData.startDate,
+                timeZoneDifference
+              );
+              if (solutionData.startDate < programData[0].startDate) {
+                solutionData.startDate = programData[0].startDate;
+              }
+            }
+          }
+  
 
           let updateObject = {
             "$set" : {}
