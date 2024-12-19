@@ -585,7 +585,7 @@ module.exports = class UserExtensionHelper {
                    
                     const programData = await programsHelper.programDocuments({
                         _id: {$in: programIds},
-                        status: constants.common.ACTIVE 
+                        isDeleted:false
                      },["externalId","name","description"]);
 
                      if (programData.length > 0) {
