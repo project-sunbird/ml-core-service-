@@ -127,6 +127,7 @@ module.exports = class ProgramsHelper {
           ...data,
         });
         
+        programData = _.omit(programData, ["scope", "userId"]);
         let program = await database.models.programs.create(
           programData
         );
