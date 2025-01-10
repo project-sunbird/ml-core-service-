@@ -136,7 +136,7 @@ module.exports = class ProgramsHelper {
           };
         }
         
-        if( data.scope && false ) {
+        if( data.scope ) {
           
           let programScopeUpdated = await this.setScope(
             program._id,
